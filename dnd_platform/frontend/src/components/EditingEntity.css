@@ -1,0 +1,133 @@
+/* Общий фон страницы */
+body {
+  background: #121212; /* Темный фон */
+  color: #EAEAEA; /* Светлый текст */
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Модальное окно */
+.entity-editor .modal-content {
+  background: #1E1E1E; /* Темный фон с легким оттенком серого */
+  border-radius: 12px;
+  box-shadow:
+    0 6px 12px rgba(0, 0, 0, 0.4); /* Мягкая тень */
+  padding: 25px;
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+/* Заголовок модального окна */
+.entity-editor .modal-header {
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  font-weight: 600;
+  color: #EAEAEA; /* Светлый текст */
+  text-align: center;
+}
+
+/* Контент модального окна */
+.entity-editor .modal-body {
+  background: transparent;
+  border: none;
+  color: #EAEAEA;
+  font-size: 16px;
+}
+
+/* Стат-блоки (характеристики) */
+.stat-block {
+  background: #242424; /* Темный, но мягкий фон */
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.3); /* Мягкая тень */
+  margin-bottom: 20px;
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+/* Входные поля и чекбоксы */
+.form-control, .form-check-input {
+  background: #2A2A2A;
+  border: 1px solid #444444; /* Легкая граница */
+  border-radius: 8px;
+  color: #EAEAEA;
+  padding: 12px;
+  font-size: 16px;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.form-control:focus, .form-check-input:focus {
+  border-color: #666666; /* Легкая смена цвета при фокусе */
+  box-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+}
+
+/* Кнопки */
+.btn {
+  background: #333333; /* Глубокий, но не черный */
+  border-radius: 10px;
+  padding: 12px 24px;
+  color: #EAEAEA;
+  font-size: 16px;
+  text-align: center;
+  border: none;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn:hover {
+  background: #444444; /* Легкая смена фона */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.btn:active {
+  background: #555555; /* Еще более темный оттенок */
+  box-shadow: inset 1px 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Лейблы */
+label {
+  font-size: 16px;
+  color: #EAEAEA; /* Светлый цвет текста */
+  display: block;
+  margin-bottom: 10px;
+}
+
+/* Картинки, иконки, контент с изображениями */
+img, .icon {
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  transition: box-shadow 0.2s ease;
+}
+
+img:hover, .icon:hover {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* Иконки для кнопок */
+.icon-button {
+  background: #333333;
+  border-radius: 50%;
+  padding: 12px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  color: #EAEAEA;
+  font-size: 18px;
+  transition: box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.icon-button:hover {
+  background: #444444;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.text-primary{
+        color: rgb(255 255 255) !important;
+}
+
+.text-muted {
+    --bs-text-opacity: 1;
+    color: rgb(212 212 212 / 75%) !important;
+}
+.border-primary {
+    --bs-border-opacity: 1;
+    border-color: rgb(255 255 255) !important;
+}

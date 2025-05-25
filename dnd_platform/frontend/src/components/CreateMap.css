@@ -1,0 +1,98 @@
+/* Основные стили для контейнера */
+.map-creation-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #121212; /* Темный фон */
+  font-family: 'Arial', sans-serif;
+}
+.map-card {
+
+width:100%;
+}
+
+/* Карточка с неоморфным эффектом */
+.map-creation-card {
+  background: #1e1e1e; /* Тёмно-серый фон */
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.3), -8px -8px 15px rgba(255, 255, 255, 0.1);
+  width: 400px;
+  text-align: center;
+  color: #fff; /* Белый цвет для текста */
+}
+
+h2 {
+  color: #e0e0e0; /* Светло-серый цвет для заголовка */
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+/* Контейнер формы */
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Стиль для метки ввода */
+.input-label {
+  color: #b0b0b0; /* Более светлый оттенок для текста */
+  font-size: 16px;
+  text-align: left;
+  margin-bottom: 5px;
+}
+
+/* Стиль для поля ввода */
+.input-field {
+  background: #2c2c2c; /* Темно-серый фон для полей ввода */
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 16px;
+  color: #fff; /* Белый цвет для текста */
+  box-shadow: inset 5px 5px 10px rgba(0, 0, 0, 0.5), inset -5px -5px 10px rgba(255, 255, 255, 0.2);
+  transition: box-shadow 0.3s ease;
+}
+
+.input-field:focus {
+  outline: none;
+  box-shadow: inset 5px 5px 10px rgba(255, 255, 255, 0.1), inset -5px -5px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Стиль для кнопки */
+.submit-button {
+  background: #333; /* Темный фон для кнопки */
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff; /* Белый цвет для текста */
+  cursor: pointer;
+  box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5), -4px -4px 8px rgba(255, 255, 255, 0.1);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.submit-button:hover {
+  background: #444; /* Немного светлее при наведении */
+  box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.7), -4px -4px 8px rgba(255, 255, 255, 0.1);
+}
+
+.submit-button:active {
+  background: #555; /* Более светлый фон при нажатии */
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Превью изображения */
+.image-preview {
+  margin-top: 20px;
+}
+
+.image-preview img {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5), -4px -4px 8px rgba(255, 255, 255, 0.1);
+}
