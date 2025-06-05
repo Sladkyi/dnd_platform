@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './CreateMap.css';
-  import { useParams } from 'react-router-dom';
+import './styles/CreateMap.css';
+import { useParams } from 'react-router-dom';
 
 const CreateMap = () => {
   const [mapName, setMapName] = useState('');
   const [mapImage, setMapImage] = useState(null);
   const navigate = useNavigate();
   const { id } = useParams();
-  console.log(id)
+  console.log(id);
 
   const handleNameChange = (event) => {
     setMapName(event.target.value);
@@ -37,13 +37,16 @@ const CreateMap = () => {
     formData.append('description', 'Описание карты'); // Можешь сделать отдельное поле
 
     try {
-      const response = await fetch(`http://localhost:8000/api/maps/change/${id}/`, {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': getCSRFToken(),
-        },
-        body: formData,
-      });
+      const response = await fetch(
+        `http://localhost:8000/api/maps/change/${id}/`,
+        {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': getCSRFToken(),
+          },
+          body: formData,
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();

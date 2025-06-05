@@ -11,11 +11,8 @@ const MyEntities = ({ profile }) => {
             if (!response.ok) throw new Error("Не удалось получить данные.");
 
             const data = await response.json();
-            const entityNames = data.map(entity =>
-                entity.map.shapes.map(shape => shape.name)
-            ).flat();
-
-            setShapes(entityNames);
+            console.log(data)
+            setShapes(data); // весь массив объектов Shape
         } catch (error) {
             console.error("Ошибка при загрузке сущностей:", error);
         }
@@ -42,18 +39,21 @@ const MyEntities = ({ profile }) => {
                 <div id="entity-collapse" className="mt-3">
                     <Row xs={1} sm={2} md={3} lg={4} className="g-3">
                         {shapes.length > 0 ? (
-                            shapes.map((name, index) => (
-                                <Col key={index}>
-                                    <Card className="h-100 shadow-sm">
-                                        <Card.Body>
-                                            <Card.Title>
-                                                {name ? name : 'Без имени'}
-                                            </Card.Title>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
+                            shapes.map((shape, index) => (
+                              <Col key={shape.id || index}>
+                                <Card className="h-100 shadow-sm" >
+                                  <Card.Body>
+                                    <Card.Title>{shape.name || 'Без имени'}</Card.Title>
+                                    <Card.Text>
+                                      Раса: {shape.race || '—'}<br/>
+                                      Класс: {shape.character_class || '—'}<br/>
+                                      Уровень: {shape.level}
+                                    </Card.Text>
+                                  </Card.Body>
+                                </Card>
+                              </Col>
                             ))
-                        ) : (
+                                                    ) : (
                             <p>Нет сущностей для отображения.</p>
                         )}
                     </Row>

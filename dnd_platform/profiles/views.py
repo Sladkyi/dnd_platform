@@ -44,15 +44,15 @@ class UserMap(APIView):
 
 class UserEntities(APIView):
     def get(self, request, pk):
-        print("get ")
+        print("get user entities")
         try:
-            entities = Shape.objects.filter(map__user__id=pk)
+            # Получаем всех персонажей, где пользователь — владелец
+            entities = Shape.objects.filter(owner__id=pk)
             serializer = EntitySerializer(entities, many=True)
-
             return Response(serializer.data)
         except Exception as e:
-            print("error" , str(e))
-            return Response({"error": str(e)})
+            print("error", str(e))
+            return Response({"error": str(e)}, status=500)
 
 class LoginProfile(APIView):
     def post(self, request):

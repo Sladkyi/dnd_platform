@@ -1,54 +1,86 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Map, Room, OpenRoom
-import uuid
-import json
-import logging
+from rest_framework import generics, viewsets, permissions
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+
 from django.contrib.auth import authenticate, login
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework import generics, viewsets, permissions
-from rest_framework.views import APIView
-from .serializers import MapSerializer
-from.models import Shape , User, GameSession
-from .serializers import ShapeImageSerializer, ShapeSerializer , RoomSerializer, PointOfInterestSerializer
-from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
+
+from .models import Map, Room, Shape, User, GameSession, PlayerInSession
+from .serializers import (
+    MapSerializer,
+    ShapeImageSerializer,
+    ShapeSerializer,
+    RoomSerializer,
+    PointOfInterestSerializer
+)
+
 class MapViewSet(viewsets.ModelViewSet):
     queryset = Map.objects.all()
     serializer_class = MapSerializer
-class JoinRoomView(APIView):
-    def post(self, request, room_id):
-        room = get_object_or_404(OpenRoom, id=room_id)
-        room.players.add(request.user)
-        return Response({'detail': 'Вы присоединились к комнате'}, status=200)
-
-class RoomDetailView(APIView):
-    def get(self, request, room_id):
-        room = get_object_or_404(OpenRoom, id=room_id)
-        data = RoomSerializer(room).data
-        return Response(data)
 
 
 class JoinGameView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, session_id):
-        # Находим сессию по session_id
         session = get_object_or_404(GameSession, id=session_id)
         user = request.user
 
-        # Проверяем, не присоединился ли пользователь
-        if user in session.players.all():
-            return Response({'detail': 'Вы уже присоединились к игре'}, status=400)
+        # 🧙 Если пользователь — владелец сессии
+        if user == session.owner:
+            return Response({
+                "role": "master",
+                "map_id": session.map.id
+            })
 
-        # Создаём или находим сущность игрока
-        shape = Shape.objects.filter(user=user, map=session.map).first()
-        if not shape:
-            shape = Shape.objects.create(user=user, map=session.map, x=0, y=0, name=user.username)
+        # 👤 Если игрок — показать доступные персонажи
+        available_shapes = Shape.objects.filter(owner=request.user)
 
-        # Добавляем игрока в сессию
-        session.players.add(user)
-        return Response({'detail': 'Вы успешно присоединились к игре', 'room_id': session.map.last_opened_room_id})
+        return Response({
+            "role": "player",
+            "map_id": session.map.id,
+            "available_shapes": [{"id": s.id, "name": s.name} for s in available_shapes]
+        })
+class JoinSessionWithShapeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, session_id):
+        session = get_object_or_404(GameSession, id=session_id)
+        user = request.user
+        shape_id = request.data.get("shape_id")
+
+        if not shape_id:
+            return Response({"error": "shape_id обязателен"}, status=400)
+
+        # Проверка: не присоединялся ли уже
+        if PlayerInSession.objects.filter(session=session, user=user).exists():
+            return Response({"detail": "Вы уже присоединились к этой сессии"}, status=400)
+
+        shape = get_object_or_404(Shape, id=shape_id)
+
+        if shape.owner and shape.owner != user:
+            return Response({"error": "Этот персонаж уже занят"}, status=403)
+
+        # Назначаем владельца персонажу
+        shape.owner = user
+        shape.save()
+
+        # Создаём связь игрока с сессией
+        PlayerInSession.objects.create(
+            session=session,
+            user=user,
+            character=shape
+        )
+
+        return Response({
+            "detail": "Успешно присоединились",
+            "map_id": session.map.id
+        }, status=200)
 
 class CreateURLView(APIView):
     permission_classes = [IsAuthenticated]
@@ -63,14 +95,15 @@ class CreateURLView(APIView):
             map_instance.save()
 
         # Создаём игровую сессию
-        session = GameSession.objects.create(map=map_instance, user=request.user)
+        session = GameSession.objects.create(map=map_instance, owner=request.user, name="Сессия")
 
         # Генерируем ссылку
-        join_url = request.build_absolute_uri(f'/join/{session.id}/')
+        join_url = f'http://localhost:3000/join/{session.id}/'
 
         return Response({
             "session_id": str(session.id),
-            "join_url": join_url
+            "join_url": join_url,
+            "session_players": [user.username for user in session.players.all()]
         })
 class PointOfInterestEditing(APIView):
     def post(self, request, pk):
@@ -213,6 +246,22 @@ class ShapeDetailAPIView(APIView):
             print(f"Shape with ID {pk} not found.")
             return Response({"detail": "Shape not found"}, status=status.HTTP_404_NOT_FOUND)
 
+    def patch(self, request, pk):
+        try:
+            shape = Shape.objects.get(pk=pk)
+            print(f"PATCH — updating shape {pk} with data:", request.data)
+            shape_data = request.data.get('shapes', [request.data])[0]
+
+            serializer = ShapeSerializer(shape, data=shape_data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                print("Validation errors:", serializer.errors)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Shape.DoesNotExist:
+            print(f"Shape with ID {pk} not found.")
+            return Response({"detail": "Shape not found"}, status=status.HTTP_404_NOT_FOUND)
     def delete(self, request, pk):
         try:
             shape = Shape.objects.get(pk=pk)

@@ -1,0 +1,128 @@
+:root {
+    --global-bg-dark: #121212;
+    --global-bg-main: #1a1a1a;
+    --global-bg-surface: #0d0f15;
+    --global-bg-secondary: #1e1e1e;
+    --global-bg-tertiary: #2b2b2b;
+    --modal-bg: #121212;
+
+    --text-primary: #e8d8c9;
+    --text-secondary: #b8b0a8;
+    --text-tertiary: #9e948e;
+    --text-accent: #f3701e;
+    --text-accent-hover: #ffa259;
+    --text-muted: rgba(232, 216, 201, 0.5);
+    --text-main: var(--text-primary);
+    --text-color: var(--text-primary);
+
+    --ui-border-primary: #4b607f;
+    --ui-border-secondary: #f3701e;
+    --ui-border-light: rgba(232, 216, 201, 0.2);
+    --modal-border: var(--ui-border-secondary);
+
+    --ui-shadow-dark: rgba(0, 0, 0, 0.6);
+    --ui-shadow-medium: rgba(0, 0, 0, 0.4);
+    --ui-shadow-light: rgba(255, 255, 255, 0.1);
+    --modal-shadow: var(--ui-shadow-dark);
+
+    --button-bg: rgba(243, 112, 30, 0.07);
+    /* мягкий тёплый фон */
+    --button-hover: rgba(243, 112, 30, 0.14);
+    /* тёплый ховер */
+    --button-border: rgba(243, 112, 30, 0.3);
+    /* тёплая рамка */
+    --icon-button-bg: rgba(243, 112, 30, 0.08);
+    /* тёплая иконка */
+    --icon-button-hover-bg: rgba(243, 112, 30, 0.18);
+    --btn-bg-primary: var(--button-bg);
+    --btn-bg-secondary: #5b6f90;
+    --btn-bg-tertiary: #6e87ab;
+    --btn-bg-hover: var(--button-hover);
+    --btn-bg-active: var(--button-bg);
+    --btn-shadow: rgba(0, 0, 0, 0.3);
+    --icon-button-bg: rgba(243, 112, 30, 0.08);
+        /* тёплая иконка */
+        --icon-button-hover-bg: rgba(243, 112, 30, 0.18);
+
+    --btn-danger-bg: rgba(243, 112, 30, 0.15);
+    --btn-danger-border: rgba(243, 112, 30, 0.45);
+    --danger-bg: var(--btn-danger-bg);
+    --danger-border: var(--btn-danger-border);
+    --danger-hover: rgba(243, 112, 30, 0.3);
+
+    --card-bg: rgba(232, 216, 201, 0.04);
+    --card-bg-primary: var(--card-bg);
+    --card-bg-secondary: rgba(232, 216, 201, 0.07);
+    --card-hover: rgba(232, 216, 201, 0.08);
+    --card-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    --card-shadow-dark: #1a1a1a;
+    --card-shadow-light: #3a3a3a;
+
+    --panel-bg: rgba(13, 13, 17, 0.95);
+    --panel-border: var(--button-border);
+
+    --stats-bg: linear-gradient(to bottom, #1a1a1a, #0d0f15);
+    --stats-border: #5d2906;
+    --stats-border-dark: #3d1b04;
+    --stats-title: var(--text-accent);
+    --stats-icon: var(--text-accent);
+    --stats-badge-bg: linear-gradient(to bottom, #f3701e, #d85e14);
+    --stats-badge-text: #1a0f0b;
+    --stats-input-bg: rgba(50, 25, 5, 0.1);
+    --stats-input-text: var(--text-accent);
+    --stats-input-border: #5d2906;
+    --stats-icon-shadow: rgba(243, 112, 30, 0.5);
+    --stats-overlay-light: rgba(243, 112, 30, 0.08);
+
+    --proficiency-bg: rgba(75, 96, 127, 0.2);
+    --saving-throw-bg: var(--proficiency-bg);
+    --skill-row-bg: rgba(75, 96, 127, 0.1);
+    --skill-row-border: var(--ui-border-primary);
+    --skill-row-hover-bg: rgba(75, 96, 127, 0.15);
+    --skill-name: var(--text-primary);
+
+    --dice-roll: #ffc04d;
+    --dice-total: var(--text-accent);
+    --dice-result-bg: linear-gradient(to bottom, #1f1107, #130a04);
+    --dice-result-shine: rgba(243, 112, 30, 0.6);
+    --dice-details: var(--text-primary);
+    --roll-result: var(--text-accent);
+    --roll-details: #a09070;
+    --critical-text: #f59e0b;
+
+    --avatar-border: var(--text-primary);
+    --avatar-border-dark: #8e8173;
+    --avatar-shadow: rgba(255, 255, 255, 0.05);
+    --avatar-size: 90px;
+
+    --image-overlay: rgba(255, 255, 255, 0.02);
+    --noise-pattern: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30"><rect width="30" height="30" fill="none" stroke="rgba(255,255,255,0.02)" stroke-width="0.5"/></svg>');
+    --smoke-pattern: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="1" numOctaves="1"/></filter><rect width="100" height="100" fill="rgba(255,255,255,0.03)" filter="url(#noise)"/></svg>');
+
+    --map-bg-storm: #08080c;
+    --map-text-storm: #b8b0a8;
+    --map-accent: var(--text-accent);
+    --map-accent-hover: var(--lightning-hover);
+
+    --scroll-track: rgba(30, 30, 30, 0.9);
+    --scroll-thumb: rgba(75, 96, 127, 0.3);
+
+    --storm-bg: #08080c;
+    --storm-text: #b8b0a8;
+    --storm-border: rgba(232, 216, 201, 0.2);
+    --storm-shadow: rgba(0, 0, 0, 0.6);
+    --lightning-accent: var(--text-accent);
+    --lightning-hover: rgba(243, 112, 30, 0.15);
+
+    --z-modal: 1000;
+    --z-tooltip: 1100;
+    --z-dropdown: 1200;
+
+    --border-contrast: rgba(255, 255, 255, 0.07);
+    --bg-hover-subtle: rgba(232, 216, 201, 0.06);
+
+    --font-main: 'Noto Sans JP', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --font-accent: 'Roboto', sans-serif;
+    --bg-color: var(--global-bg-main);
+
+    --input-width-small: 70px; }

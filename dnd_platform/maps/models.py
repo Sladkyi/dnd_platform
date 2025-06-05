@@ -21,16 +21,13 @@ class Map(models.Model):
         verbose_name_plural = "Карты"
 class GameSession(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    map = models.ForeignKey(Map, on_delete=models.CASCADE, related_name="sessions", verbose_name="Карта")
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
-
-    def __str__(self):
-        return f"Сессия {self.id} для карты {self.map.title}"
-
-    class Meta:
-        verbose_name = "Игровая сессия"
-        verbose_name_plural = "Игровые сессии"
+    name = models.CharField(max_length=255)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    password = models.CharField(max_length=100, blank=True, null=True)
+    max_players = models.IntegerField(default=5)
+    created_at = models.DateTimeField(auto_now_add=True)
+    map = models.ForeignKey(Map, on_delete=models.CASCADE, related_name="open_rooms", verbose_name="Карта")
+    code = models.CharField(max_length=100, blank=True, null=True)
 
 
 
@@ -68,16 +65,77 @@ class MapPoint(models.Model):
         verbose_name = "Точка на карте"
         verbose_name_plural = "Точки на карте"
 
-class OpenRoom(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=255)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
-    password = models.CharField(max_length=100, blank=True, null=True)
-    max_players = models.IntegerField(default=5)
-    created_at = models.DateTimeField(auto_now_add=True)
-    map = models.ForeignKey(Map, on_delete=models.CASCADE, related_name="open_rooms", verbose_name="Карта")
-    code = models.CharField(max_length=100, blank=True, null=True)
-    players = models.ManyToManyField(User, related_name='joined_rooms', blank=True)
+class Item(models.Model):
+    # 📦 Базовая информация
+    name = models.CharField(max_length=100, verbose_name="Название")
+    description = models.TextField(blank=True, null=True, verbose_name="Описание")
+    icon = models.ImageField(upload_to='items/icons/', null=True, blank=True, verbose_name="Иконка")
+
+    # ✨ Редкость
+    RARITY_CHOICES = [
+        ('common', 'Обычный'),
+        ('uncommon', 'Необычный'),
+        ('rare', 'Редкий'),
+        ('epic', 'Эпический'),
+        ('legendary', 'Легендарный'),
+        ('artifact', 'Артефакт'),
+    ]
+    rarity = models.CharField(max_length=20, choices=RARITY_CHOICES, default='common', verbose_name="Редкость")
+
+    # ⚔️ Боевая механика
+    damage = models.CharField(max_length=50, blank=True, null=True, verbose_name="Урон")  # Например: "1d8 + 2"
+    armor_bonus = models.IntegerField(default=0, verbose_name="Бонус к броне")
+    effect = models.TextField(blank=True, null=True, verbose_name="Эффект")  # Например: "Восстанавливает 5 HP"
+    is_magical = models.BooleanField(default=False, verbose_name="Магический")
+
+    # 🎭 Использование
+    is_consumable = models.BooleanField(default=False, verbose_name="Расходуемый")
+    charges = models.IntegerField(default=0, verbose_name="Заряды")
+    max_charges = models.IntegerField(default=0, verbose_name="Максимум зарядов")
+    slot_type = models.CharField(
+        max_length=50,
+        choices=[
+            ('head', 'Голова'),
+            ('body', 'Тело'),
+            ('weapon', 'Оружие'),
+            ('accessory', 'Аксессуар'),
+        ],
+        blank=True,
+        null=True,
+        verbose_name="Слот экипировки"
+    )
+
+    # 🧠 Требования и доступность
+    requirements = models.TextField(blank=True, null=True, verbose_name="Требования")
+    usable_by = models.JSONField(default=list, blank=True, verbose_name="Кем используется")  # ["Wizard", "Cleric"]
+
+    # 🧬 Нарратив и особенности
+    flavor_text = models.CharField(max_length=200, blank=True, null=True, verbose_name="Флэйвор-текст")
+    lore = models.TextField(blank=True, null=True, verbose_name="Лор")
+    is_unique = models.BooleanField(default=False, verbose_name="Уникальный")
+
+    # 🛡 Вес и стоимость
+    weight = models.FloatField(default=0.0, verbose_name="Вес")
+    value = models.IntegerField(default=0, verbose_name="Ценность (золото)")
+
+    # 🌐 Публичность и статус
+    is_public = models.BooleanField(default=False, verbose_name="Публичный предмет")
+    is_quest_item = models.BooleanField(default=False, verbose_name="Квестовый предмет")
+
+    # 🕓 Служебное
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Создан")
+
+    def __str__(self):
+        return self.name or f"Item #{self.id}"
+
+    class Meta:
+        verbose_name = "Предмет"
+        verbose_name_plural = "Предметы"
+
+
+    def __str__(self):
+        return self.name
+
 
 class RoomPlayer(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -90,9 +148,18 @@ class Shape(models.Model):
         ('circle', 'Circle'),
         ('rectangle', 'Rectangle'),
     ]
-
+    is_clone = models.BooleanField(default=False)
     # 📌 Базовые свойства на карте
-    map = models.ForeignKey('Map', on_delete=models.CASCADE, related_name="shapes")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")
+    owner = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="controlled_shapes",
+        verbose_name="Игрок, управляющий сущностью"
+    )
+    map = models.ForeignKey('Map', on_delete=models.CASCADE, related_name="shapes", null=True, blank=True)
     type = models.CharField(max_length=50, choices=SHAPE_TYPES)
     x = models.FloatField()
     y = models.FloatField()
@@ -181,6 +248,51 @@ class Shape(models.Model):
     sanity = models.IntegerField(default=100)
     insanity = models.TextField(blank=True, null=True)
     mood = models.CharField(max_length=50, blank=True, null=True)
+    # 🎯 Механика боя и прогрессии
+    initiative = models.IntegerField(default=0)
+    proficiency_bonus = models.IntegerField(default=2)
+    hit_dice = models.CharField(max_length=20, blank=True, null=True)
+    death_saves_success = models.IntegerField(default=0)
+    death_saves_fail = models.IntegerField(default=0)
+
+    # 🪄 Магия
+    spell_slots_total = models.IntegerField(default=0)
+    spell_slots_used = models.IntegerField(default=0)
+    known_cantrips = models.TextField(blank=True, null=True)
+    prepared_spells = models.TextField(blank=True, null=True)
+
+    # 🛡 Спасброски и навыки
+    saving_throws = models.JSONField(default=dict)
+    skills = models.JSONField(default=dict)
+
+    # ⚡ Очки действия
+    max_ap = models.IntegerField(default=3)
+    current_ap = models.IntegerField(default=3)
+
+    # 🗿 Статусы
+    statuses = models.JSONField(default=list)
+    is_invisible = models.BooleanField(default=False)
+    is_stunned = models.BooleanField(default=False)
+    is_paralyzed = models.BooleanField(default=False)
+    reaction_used = models.BooleanField(default=False)
+    extra_attacks = models.IntegerField(default=0)
+
+    head_slot = models.ForeignKey(Item, on_delete=models.SET_NULL, null=True, blank=True, related_name='equipped_on_head')
+    body_slot = models.ForeignKey(Item, on_delete=models.SET_NULL, null=True, blank=True, related_name='equipped_on_body')
+    weapon_slot = models.ForeignKey(Item, on_delete=models.SET_NULL, null=True, blank=True, related_name='equipped_as_weapon')
+
+    created_from_test = models.BooleanField(default=False)
+    emotion_override = models.CharField(max_length=50, blank=True, null=True)
+    favorite_gifs = models.JSONField(default=list)    
+    inventory = models.ManyToManyField('Item', through='InventoryItem', related_name='owners')
+# ActionLog: shape, action, timestamp, description
+    tags = models.JSONField(default=list, blank=True)
+    experience = models.IntegerField(default=0)
+    is_dead = models.BooleanField(default=False)
+    is_permanently_dead = models.BooleanField(default=False, verbose_name="Персонаж окончательно мёртв")
+    permadeath = models.BooleanField(default=False, verbose_name="Перманентная смерть")
+    is_public = models.BooleanField(default=False, verbose_name="Публичный персонаж")
+
 
     def __str__(self):
         return self.name or f"Shape #{self.id}"
@@ -188,6 +300,23 @@ class Shape(models.Model):
     class Meta:
         verbose_name = "Сущность / Персонаж"
         verbose_name_plural = "Сущности / Персонажи"
+
+from django.db import models
+
+
+
+class InventoryItem(models.Model):
+    shape = models.ForeignKey(Shape, on_delete=models.CASCADE, related_name='inventory_items')
+
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    quantity = models.IntegerField(default=1)
+    equipped = models.BooleanField(default=False)  # если это меч или броня
+    is_quick_slot = models.BooleanField(default=False)  # используется в "быстром инвентаре"
+
+    def __str__(self):
+        return f"{self.item.name} x{self.quantity} ({self.shape})"
+
+
 class Spell(models.Model):
     name = models.CharField(max_length=100, verbose_name="Название заклинания")
     description = models.TextField(verbose_name="Описание")
@@ -271,10 +400,27 @@ class CharacterClass(models.Model):
 
 
 class PlayerInSession(models.Model):
-    session = models.ForeignKey(GameSession, on_delete=models.CASCADE, related_name='players')
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    character = models.ForeignKey(Shape, on_delete=models.CASCADE)
+    session = models.ForeignKey(
+        GameSession,
+        on_delete=models.CASCADE,
+        related_name='players'  # 👈 чтобы потом удобно session.players.all()
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name="Пользователь"
+    )
+    character = models.ForeignKey(
+        Shape,
+        on_delete=models.CASCADE,
+        verbose_name="Персонаж"
+    )
     joined_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('session', 'user')  # Один пользователь — один персонаж на сессию
+        unique_together = ('session', 'user')  # Один пользователь — одна запись в сессии
+        verbose_name = "Игрок в сессии"
+        verbose_name_plural = "Игроки в сессиях"
+
+    def __str__(self):
+        return f"{self.user.username} в сессии {self.session.id}"

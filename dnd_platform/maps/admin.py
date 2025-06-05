@@ -1,19 +1,24 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import Map, Shape, Room, Race, CharacterClass, Spell, MapPoint
+from .models import GameSession, PlayerInSession
 
 
-
-class RoomInline(admin.TabularInline):
-    model = Room
-    extra = 1
-class SpellAdmin(admin.ModelAdmin):
-    list_display = ('name', 'level', 'school', 'is_public', 'creator', 'created_at', 'updated_at')
-    list_filter = ('level', 'is_public', 'creator')
-    search_fields = ('name', 'description', 'school')
+@admin.register(GameSession)
+class GameSessionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'map', 'owner', 'created_at')
+    list_filter = ('created_at', 'map', 'owner')
+    search_fields = ('name', 'code', 'owner__username', 'map__name')
+    readonly_fields = ('id', 'created_at')
     ordering = ('-created_at',)
-    readonly_fields = ('created_at', 'updated_at')
 
+
+@admin.register(PlayerInSession)
+class PlayerInSessionAdmin(admin.ModelAdmin):
+    list_display = ('session', 'user', 'character', 'joined_at')
+    list_filter = ('session', 'joined_at')
+    search_fields = ('user__username', 'character__name', 'session__id')
+    readonly_fields = ('joined_at',)
 # Админка для рас
 @admin.register(Race)
 class RaceAdmin(admin.ModelAdmin):
@@ -36,7 +41,7 @@ class MapAdmin(admin.ModelAdmin):
     list_display = ('user', 'title', 'description', 'image', 'created_at')
     search_fields = ('user__username', 'user__email', 'title')
     ordering = ('id',)
-    inlines = [RoomInline]
+
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('user')
@@ -64,7 +69,7 @@ class RoomAdmin(admin.ModelAdmin):
 @admin.register(Shape)
 class ShapeAdmin(admin.ModelAdmin):
     class ShapeAdmin(admin.ModelAdmin):
-        list_display = ('id', 'name', 'race', 'character_class', 'level', 'is_npc', 'map')
+        list_display = ('id', 'name', 'race', 'character_class', 'level', 'is_npc', 'map' , 'user' , 'owner')
         list_filter = ('is_npc', 'character_class', 'alignment', 'map')
         search_fields = ('name', 'race', 'character_class', 'background', 'appearance', 'notes')
 
