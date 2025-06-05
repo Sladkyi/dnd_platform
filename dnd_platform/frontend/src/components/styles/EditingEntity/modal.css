@@ -1,0 +1,49 @@
+/* ⚔️ Wasurekami Modal — Retro Japanese Minimalism × Storm Aesthetic */
+.entity-editor .modal-content {
+    background:
+        linear-gradient(135deg, rgba(12, 12, 16, 0.96), rgba(6, 6, 8, 0.98)),
+        var(--noise-pattern),
+        var(--smoke-pattern);
+    border: 1px solid var(--storm-border);
+    border-radius: 18px;
+    box-shadow:
+        0 0 32px rgba(0, 0, 0, 0.7),
+        inset 0 0 16px rgba(255, 255, 255, 0.015);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    z-index: var(--z-modal);
+}
+.entity-editor .modal-header,
+.entity-editor .modal-footer {
+    background:
+        linear-gradient(to right, rgba(24, 24, 28, 0.96), rgba(18, 18, 22, 0.98));
+    border-color: var(--storm-border);
+    padding: 22px 28px;
+    border-style: solid;
+    border-width: 0 0 1px 0;
+    color: var(--text-primary);
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+}
+.entity-editor .modal-footer {
+    border-width: 1px 0 0 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+.entity-editor .modal-body {
+    background: var(--global-bg-main);
+    padding: 0 28px 28px 28px;
+    color: var(--text-main);
+}
+.entity-editor .modal-content::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 28px;
+    right: 28px;
+    height: 2px;
+    background: linear-gradient(to right, var(--lightning-accent), transparent);
+    opacity: 0.5;
+}
