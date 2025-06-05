@@ -1,0 +1,176 @@
+/* Стили для вкладки "Статы" */
+.stats-tab {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text-primary);
+    background: var(--stats-bg);
+    padding: 15px;
+    border-radius: 12px;
+    border: 2px solid var(--stats-border);
+    box-shadow: 0 0 20px var(--ui-shadow-dark), inset 0 0 10px var(--ui-shadow-medium);
+    position: relative;
+    overflow: hidden;
+}
+
+.stats-tab::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        radial-gradient(circle at 20% 30%, var(--stats-overlay-light) 0%, transparent 15%),
+        radial-gradient(circle at 80% 70%, var(--stats-overlay-light) 0%, transparent 15%),
+        var(--noise-pattern);
+    z-index: 0;
+}
+
+/* Карточка характеристики */
+.stat-tile {
+    background: var(--stats-bg);
+    border: 1px solid var(--stats-border);
+    border-radius: 10px;
+    box-shadow: 0 3px 12px var(--ui-shadow-dark), inset 0 0 5px var(--ui-shadow-medium);
+    transition: all 0.3s ease;
+    z-index: 1;
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-tile:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px var(--stat-tile-hover-shadow), inset 0 0 5px var(--ui-shadow-medium);
+    border-color: var(--stats-title);
+}
+
+.stat-header {
+    background: linear-gradient(to right, var(--stats-border), var(--stats-border-dark));
+    border-bottom: 1px solid var(--stats-title);
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.stat-title {
+    color: var(--stats-title);
+    text-shadow: 1px 1px 2px var(--ui-shadow-dark);
+    font-size: 1.1rem;
+    margin: 0;
+    font-weight: bold;
+    flex-grow: 1;
+}
+
+.stat-icon {
+    color: var(--stats-icon);
+    font-size: 1.1rem;
+    margin-right: 8px;
+}
+
+.mod-badge {
+    background: var(--stats-badge-bg);
+    color: var(--stats-badge-text);
+    font-size: 1.1rem;
+    font-weight: bold;
+    min-width: 40px;
+    padding: 4px 10px;
+    border-radius: 15px;
+    box-shadow: 0 2px 5px var(--ui-shadow-medium);
+    border: 1px solid var(--stats-title);
+}
+
+.stat-input {
+    background: var(--stats-input-bg);
+    color: var(--stats-input-text);
+    border: 1px solid var(--stats-input-border);
+    font-size: 1.6rem;
+    font-weight: bold;
+    height: 50px;
+    text-align: center;
+    box-shadow: inset 0 0 8px var(--ui-shadow-medium);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    margin: 8px 0;
+}
+
+.stat-input:focus {
+    border-color: var(--stats-icon);
+    box-shadow: 0 0 8px var(--stats-icon-shadow), inset 0 0 10px var(--ui-shadow-dark);
+}
+
+/* Мини-блок «Бонус мастерства» */
+.mini-proficiency {
+    background: var(--proficiency-bg);
+    border: 1px solid var(--stats-border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.mini-proficiency-label {
+    font-size: 0.85rem;
+    color: var(--skill-name);
+}
+
+.mini-proficiency-badge {
+    background: var(--stats-badge-bg);
+    color: var(--stats-badge-text);
+    font-size: 0.9rem;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+    box-shadow: 0 1px 4px var(--ui-shadow-medium);
+    border: 1px solid var(--stats-title);
+}
+
+/* Сейвинг-роулы */
+.saving-throw {
+    background: var(--saving-throw-bg);
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--stats-border);
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+}
+
+/* Список навыков */
+.skill-list {
+    margin-top: 5px;
+    flex-grow: 1;
+}
+
+.skill-row {
+    padding: 6px 8px;
+    border-radius: 5px;
+    margin-bottom: 6px;
+    background: var(--skill-row-bg);
+    border: 1px solid var(--skill-row-border);
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.skill-row:hover {
+    background: var(--skill-row-hover-bg);
+    border-color: var(--stats-border);
+    transform: translateX(2px);
+}
+
+.skill-name {
+    color: var(--skill-name);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.skill-bonus {
+    color: var(--stats-icon);
+    font-weight: bold;
+    font-size: 0.95rem;
+    min-width: 30px;
+    text-align: center;
+}

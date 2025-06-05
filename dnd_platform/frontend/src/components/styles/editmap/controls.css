@@ -1,0 +1,68 @@
+/** コントロールパネル - 提灯をイメージ */ 
+.master-controls {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--panel-bg);
+    padding: 10px 20px;
+    border-radius: 50px;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    box-shadow: 0 0 20px var(--storm-shadow);
+    border: 1px solid var(--ui-border-primary);
+    z-index: 7;
+    transition: all 0.3s ease;
+}
+
+.master-controls:hover {
+    transform: translateX(-50%) translateY(-4px);
+}
+
+.scale-controls {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.scale-controls button {
+    width: 36px;
+    height: 36px;
+    background: var(--button-bg);
+    border: 1px solid var(--button-border);
+    border-radius: 50%;
+    color: var(--lightning-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.scale-controls button:hover {
+    background: var(--button-hover);
+    color: var(--text-primary);
+    transform: scale(1.1);
+}
+
+.reset-position {
+    background: var(--button-bg);
+    border: 1px solid var(--button-border);
+    color: var(--text-secondary);
+    padding: 8px 16px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.reset-position:hover {
+    background: var(--button-hover);
+    transform: translateY(-2px);
+    color: var(--text-primary);
+}

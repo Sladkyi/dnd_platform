@@ -1,0 +1,27 @@
+/* Вкладки навигации */
+.nav-tabs {
+    border: none;
+    margin-bottom: 20px;
+}
+
+.nav-tabs .nav-link {
+    color: var(--tab-inactive);
+    background-color: transparent;
+    border: none;
+    padding: 10px 18px;
+    font-weight: 500;
+    font-size: 15px;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--tab-hover);
+    background-color: var(--tab-hover-bg);
+    border-radius: 6px 6px 0 0;
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--tab-hover);
+    background-color: var(--tab-active-bg);
+    border-radius: 8px 8px 0 0;
+    font-weight: 600; }

@@ -1,0 +1,45 @@
+/* Адаптивность */
+@media (max-width: 1200px) {
+    .stat-title {
+        font-size: 1rem;
+    }
+
+    .stat-input {
+        font-size: 1.5rem;
+        height: 45px;
+    }
+
+    .mod-badge {
+        font-size: 1rem;
+        min-width: 35px;
+    }
+}
+
+@media (max-width: 992px) {
+    .stat-tile {
+        margin-bottom: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-tab {
+        padding: 10px;
+    }
+
+    .stat-title {
+        font-size: 0.95rem;
+    }
+
+    .stat-icon {
+        font-size: 0.95rem;
+    }
+
+    .skill-name {
+        font-size: 0.85rem;
+    }
+
+    .dice-button {
+        width: 24px;
+        height: 24px;
+        font-size: 0.7rem;
+    } }

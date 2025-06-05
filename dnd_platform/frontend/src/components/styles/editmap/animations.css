@@ -1,0 +1,35 @@
+/* アニメーション */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 var(--lightning-hover);
+    }
+
+    50% {
+        box-shadow: 0 0 0 10px rgba(243, 112, 30, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(243, 112, 30, 0);
+    }
+}
+
+.pulse {
+    animation: pulse 2.5s infinite ease-in-out;
+}
+
+@keyframes flash {
+    0% {
+        background: var(--image-overlay);
+    }
+
+    50% {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    100% {
+        background: transparent;
+    }
+}
+
+.lightning-flash {
+    animation: flash 0.1s ease-in-out 1; }
