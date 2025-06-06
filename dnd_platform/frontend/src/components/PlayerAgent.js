@@ -1,10 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import PlayerView from './PlayerView';
-import {
-  fetchMap,
-  fetchRoom,
-  updateShapePosition,
-} from '../services/MapService';
+import { fetchMap, fetchRoom } from '../services/MapService';
 import { useMapSocket } from '../hooks/useMapSocket';
 import throttle from 'lodash/throttle';
 
@@ -17,11 +13,13 @@ const PlayerAgent = ({ shapeId, mapId, scale }) => {
 
   // Загрузка карты и фигуры
   useEffect(() => {
+    // Загрузка данных при изменении mapId или shapeId
+    if (!mapId || !shapeId) return;
+
     const load = async () => {
       const { data } = await fetchMap(mapId);
       setMapData(data);
       setShapes(data.shapes || []);
-
       const playerShape = data.shapes.find(
         (s) => String(s.id) === String(shapeId)
       );
@@ -33,7 +31,7 @@ const PlayerAgent = ({ shapeId, mapId, scale }) => {
       }
     };
 
-    if (mapId && shapeId) load();
+    load();
   }, [mapId, shapeId]);
 
   const handleShapeMoveLocal = useCallback(
@@ -44,7 +42,7 @@ const PlayerAgent = ({ shapeId, mapId, scale }) => {
         prev.map((s) => (s.id === shape.id ? { ...s, ...coords } : s))
       );
     },
-    [shape]
+    [shape?.id] // Зависим только от id, а не от всего объекта
   );
 
   const handleSocketMessage = useCallback(
@@ -59,21 +57,21 @@ const PlayerAgent = ({ shapeId, mapId, scale }) => {
     [shapeId]
   );
 
-  useMapSocket(mapId, handleSocketMessage);
+  const socket = useMapSocket(mapId, handleSocketMessage);
 
   // Отправка координат на сервер
   const sendPosition = useCallback(
     (coords) => {
-      if (shape?.id) {
-        updateShapePosition(shape.id, {
-          id: shape.id,
-          x: coords.x,
-          y: coords.y,
-          // добавь fill, type и другие необходимые поля, если нужно
-        });
+      if (shape?.id && socket?.readyState === WebSocket.OPEN) {
+        socket.send(
+          JSON.stringify({
+            action: 'move',
+            payload: { id: shape.id, x: coords.x, y: coords.y },
+          })
+        );
       }
     },
-    [shape?.id]
+    [shape?.id, socket]
   );
 
   const throttledSendPosition = useMemo(
@@ -95,9 +93,8 @@ const PlayerAgent = ({ shapeId, mapId, scale }) => {
         prev.map((s) => (s.id === shape.id ? { ...s, ...coords } : s))
       );
     },
-    [shape]
+    [shape?.id] // <-- поменял зависимость на id
   );
-
   // Обновление + отправка (движение)
   const handleShapeMoveAndSend = useCallback(
     (coords) => {

@@ -66,10 +66,33 @@ const EditMap = () => {
     loadData();
   }, [id]);
 
+  const [activeShape, setActiveShape] = useState(null);
+
+  const updateActiveShapePosition = (data) => {
+    setActiveShape((prev) => {
+      if (!prev) return data; // Если ещё нет активной фигуры — просто сохраняем
+      if (prev.id !== data.id) return prev; // Если это другая фигура — не меняем
+
+      // Обновляем активную фигуру с новыми данными
+      return {
+        ...prev,
+        ...data,
+      };
+    });
+  };
+
   useMapSocket(id, (data) => {
-    setShapes((prev) =>
-      prev.map((s) => (s.id === data.id ? { ...s, ...data } : s))
-    );
+    console.log('сообщение пришло в editmap', data);
+
+    if (data.action === 'move' && data.payload) {
+      const { id, ...rest } = data.payload;
+
+      setShapes((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, ...rest } : s))
+      );
+
+      updateActiveShapePosition(data.payload);
+    }
   });
 
   const handleRoomChange = async (room) => {
