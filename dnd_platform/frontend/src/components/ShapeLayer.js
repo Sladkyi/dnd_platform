@@ -18,6 +18,7 @@ const ShapeLayer = ({
   onSelectShape,
   selectedShape,
   canDragShape,
+  handleShapeDrag,
 }) => {
   const [images, setImages] = useState([]);
 
@@ -69,10 +70,14 @@ const ShapeLayer = ({
             onDragMove?.(updated);
           }}
           onDragEnd={(e) => {
+            const node = e.target;
             const updated = {
-              ...shape,
-              x: e.target.x(),
-              y: e.target.y(),
+              id: node.id(),
+              x: node.x(),
+              y: node.y(),
+              type: node.attrs.type || 'circle', // или shape.type, если есть
+              fill: node.attrs.fill || '#fff', // если используешь fill
+              // добавь другие поля, если они нужны для корректного обновления
             };
             onDragEnd?.(updated);
           }}

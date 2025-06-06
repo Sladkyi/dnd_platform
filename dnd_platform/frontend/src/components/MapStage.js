@@ -74,6 +74,7 @@ const MapStage = ({
         onDoubleClickShape={onDoubleClickShape}
         selectedShape={selectedShape}
         onSelectShape={setSelectedShape}
+        onDragEnd={onDragShape}
       />
 
       <PointLayer points={points} onSelectRoom={onSelectRoom} />

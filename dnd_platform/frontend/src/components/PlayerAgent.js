@@ -36,22 +36,40 @@ const PlayerAgent = ({ shapeId, mapId, scale }) => {
     if (mapId && shapeId) load();
   }, [mapId, shapeId]);
 
-  // WebSocket: обновление фигур
-  useMapSocket(mapId, (data) => {
-    setShapes((prev) =>
-      prev.map((s) => (s.id === data.id ? { ...s, ...data } : s))
-    );
-    if (String(data.id) === String(shapeId)) {
-      setShape((prev) => ({ ...prev, ...data }));
-    }
-  });
+  const handleShapeMoveLocal = useCallback(
+    (coords) => {
+      if (!shape) return;
+      setShape((prev) => ({ ...prev, ...coords }));
+      setShapes((prev) =>
+        prev.map((s) => (s.id === shape.id ? { ...s, ...coords } : s))
+      );
+    },
+    [shape]
+  );
+
+  const handleSocketMessage = useCallback(
+    (data) => {
+      setShapes((prev) =>
+        prev.map((s) => (s.id === data.id ? { ...s, ...data } : s))
+      );
+      if (String(data.id) === String(shapeId)) {
+        setShape((prev) => ({ ...prev, ...data }));
+      }
+    },
+    [shapeId]
+  );
+
+  useMapSocket(mapId, handleSocketMessage);
 
   // Отправка координат на сервер
   const sendPosition = useCallback(
     (coords) => {
       if (shape?.id) {
         updateShapePosition(shape.id, {
-          shapes: [{ id: shape.id, x: coords.x, y: coords.y }],
+          id: shape.id,
+          x: coords.x,
+          y: coords.y,
+          // добавь fill, type и другие необходимые поля, если нужно
         });
       }
     },
@@ -90,14 +108,14 @@ const PlayerAgent = ({ shapeId, mapId, scale }) => {
   );
 
   // Финальная отправка при окончании drag'n'drop
-  const handleDragEnd = useCallback(
-    (coords) => {
-      throttledSendPosition.cancel();
-      sendPosition(coords);
-      setIsMoving(false);
-    },
-    [sendPosition, throttledSendPosition]
-  );
+  // const handleDragEnd = useCallback(
+  //   (coords) => {
+  //     throttledSendPosition.cancel();
+  //     sendPosition(coords);
+  //     setIsMoving(false);
+  //   },
+  //   [sendPosition, throttledSendPosition]
+  // );
 
   if (!mapData || !shape) return <div>Загрузка...</div>;
 
@@ -112,11 +130,10 @@ const PlayerAgent = ({ shapeId, mapId, scale }) => {
       shapes={shapes}
       room={roomData}
       scale={scale}
-      onShapeMove={handleShapeMoveAndSend}
-      onDragMove={handleShapeMoveAndSend}
-      onDragStart={() => setIsMoving(true)}
-      onDragEnd={handleDragEnd}
+      onShapeMoveLocal={handleShapeMoveLocal} // 🔧 ← ЭТОГО НЕ ХВАТАЛО
+      onShapeMoveAndSend={handleShapeMoveAndSend}
       isMoving={isMoving}
+      setIsMoving={setIsMoving} // 🔧 ← ЭТОГО ТОЖЕ
     />
   );
 };

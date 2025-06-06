@@ -1,10 +1,15 @@
 import { useEffect, useRef } from 'react';
 
+/**
+ * Хук для подключения к WebSocket и получения обновлений по карте.
+ * mapId — ID карты.
+ * onMessage — колбэк, обрабатывающий входящие данные (должен быть мемоизирован).
+ */
 export const useMapSocket = (mapId, onMessage) => {
   const socketRef = useRef(null);
 
   useEffect(() => {
-    if (!mapId) return;
+    if (!mapId || typeof onMessage !== 'function') return;
 
     const socket = new WebSocket(`ws://localhost:8000/ws/map/${mapId}/`);
     socketRef.current = socket;
@@ -17,9 +22,9 @@ export const useMapSocket = (mapId, onMessage) => {
       try {
         const data = JSON.parse(event.data);
         console.log('📨 Получено сообщение:', data);
-        onMessage(data);
+        onMessage(data); // Важно: должен быть useCallback в родителе
       } catch (err) {
-        console.error('Ошибка при разборе сообщения:', err);
+        console.error('❌ Ошибка при разборе сообщения:', err);
       }
     };
 
@@ -28,12 +33,15 @@ export const useMapSocket = (mapId, onMessage) => {
     };
 
     socket.onclose = (event) => {
-      console.warn('🔌 WebSocket закрыт:', event.code, event.reason);
+      console.warn(
+        `🔌 WebSocket закрыт: [${event.code}] ${event.reason || ''}`
+      );
     };
 
     return () => {
       if (socketRef.current?.readyState === WebSocket.OPEN) {
         socketRef.current.close();
+        console.log('🔒 WebSocket закрыт вручную');
       }
     };
   }, [mapId, onMessage]);

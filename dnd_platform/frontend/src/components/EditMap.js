@@ -126,13 +126,23 @@ const EditMap = () => {
   };
 
   const handleShapeDrag = async (updatedShape) => {
+    console.log('shapeData отправляется:', updatedShape);
+
     setShapes((prev) =>
       prev.map((s) => (s.id === updatedShape.id ? updatedShape : s))
     );
-    await updateShapePosition(updatedShape.id, {
+
+    // Собираем полный объект, чтобы сервер не ругался
+    const shapeDataToSend = {
+      id: updatedShape.id,
       x: updatedShape.x,
       y: updatedShape.y,
-    });
+      fill: updatedShape.fill || '#FFFFFF',
+      type: updatedShape.type || 'circle',
+      // добавь другие поля, если нужно
+    };
+
+    await updateShapePosition(updatedShape.id, shapeDataToSend);
   };
 
   const handleManualEditShape = () => {
