@@ -4,32 +4,27 @@
 body {
     background: var(--global-bg-main);
     color: var(--text-primary);
-    font-family: 'Roboto', sans-serif;
+    font-family: var(--font-main);
     margin: 0;
     padding: 0;
 }
 
-/* Стили для Entity Editor */
-.entity-editor .modal-content {
-    background: var(--modal-bg);
-    border-radius: 16px;
-    box-shadow: 0 12px 28px var(--ui-shadow-dark);
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
-    overflow: hidden;
-    border: 1px solid var(--ui-border-secondary);
+/* Настройка переменных для редактора сущностей */
+.entity-editor {
+    --form-bg: var(--panel-bg);
+    --form-border: var(--ui-border-primary);
+    --form-focus-border: var(--ui-border-primary);
+    --form-focus-shadow: var(--ui-border-primary);
+    --tab-inactive: var(--text-secondary);
+    --tab-hover: var(--text-primary);
+    --tab-hover-bg: var(--btn-bg-hover);
+    --tab-active-bg: var(--btn-bg-primary);
+    --dice-button-bg: var(--panel-bg);
+    --dice-button-hover-bg: var(--button-hover);
+    --recent-rolls-bg: var(--panel-bg);
+    --recent-roll-bg: rgba(232, 216, 201, 0.04);
 }
 
-.entity-editor .modal-header,
-.entity-editor .modal-footer {
-    background-color: var(--modal-bg);
-    border: none;
-    padding: 20px 24px;
-}
-
-.entity-editor .modal-body {
-    background-color: var(--modal-bg);
-    padding: 0 24px 24px 24px;
-}
 
 /* Формы и инпуты */
 .form-control,
@@ -118,4 +113,11 @@ body {
 
 .icon-button:hover {
     background-color: var(--icon-button-hover-bg);
-    box-shadow: 0 4px 10px var(--ui-shadow-medium); }
+    box-shadow: 0 4px 10px var(--ui-shadow-medium);
+}
+
+/* Заголовок модального окна */
+.entity-editor .modal-title {
+    font-family: var(--font-main);
+    color: var(--text-accent);
+    text-shadow: none; }

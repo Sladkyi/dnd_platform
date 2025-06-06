@@ -1,15 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { Layer, Image as KonvaImage } from 'react-konva';
 
+/**
+ * ShapeLayer — слой с фигурами на карте (игроки, NPC и т.п.)
+ * Поддерживает:
+ * - Drag & Drop
+ * - Выделение
+ * - Двойной клик
+ * - Подсветку выбранной фигуры
+ */
 const ShapeLayer = ({
   shapes,
-  onDrag,
+  onDragMove,
+  onDragStart,
+  onDragEnd,
   onDoubleClickShape,
-  selectedShape,
   onSelectShape,
+  selectedShape,
+  canDragShape,
 }) => {
   const [images, setImages] = useState([]);
 
+  /**
+   * Загружаем изображения для каждой фигуры (один раз при обновлении списка).
+   */
   useEffect(() => {
     const loadImages = async () => {
       const loaded = await Promise.all(
@@ -38,25 +52,45 @@ const ShapeLayer = ({
           y={shape.y}
           width={(shape.radius || 30) * 2}
           height={(shape.radius || 30) * 2}
-          draggable
+          draggable={canDragShape ? canDragShape(shape) : true}
           shadowColor="#f1c40f"
           shadowBlur={15}
-          onClick={() => onSelectShape(shape)}
-          onDblClick={() => onDoubleClickShape?.(shape)}
           stroke={selectedShape?.id === shape.id ? 'yellow' : null}
           strokeWidth={selectedShape?.id === shape.id ? 4 : 0}
+          onClick={() => onSelectShape?.(shape)}
+          onDblClick={() => onDoubleClickShape?.(shape)}
+          onDragStart={() => onDragStart?.(shape)}
+          onDragMove={(e) => {
+            const updated = {
+              ...shape,
+              x: e.target.x(),
+              y: e.target.y(),
+            };
+            onDragMove?.(updated);
+          }}
           onDragEnd={(e) => {
             const updated = {
               ...shape,
               x: e.target.x(),
               y: e.target.y(),
             };
-            onDrag(updated);
+            onDragEnd?.(updated);
           }}
         />
       ))}
     </Layer>
   );
+};
+
+// По умолчанию фигуры можно таскать
+ShapeLayer.defaultProps = {
+  canDragShape: null,
+  onDragMove: null,
+  onDragStart: null,
+  onDragEnd: null,
+  onDoubleClickShape: null,
+  onSelectShape: null,
+  selectedShape: null,
 };
 
 export default ShapeLayer;

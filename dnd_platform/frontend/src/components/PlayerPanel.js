@@ -1,24 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import './styles/PlayerPanel.css';
 
-const PlayerPanel = ({ shape }) => {
+/**
+ * Панель игрока, отображающая HP, AP, параметры, кнопки действий и вкладки.
+ */
+const PlayerPanel = ({ shape, isMoving = false }) => {
   const [activeTab, setActiveTab] = useState('desc');
   const [particles, setParticles] = useState([]);
   const [isLowHP, setIsLowHP] = useState(false);
   const [isFullHP, setIsFullHP] = useState(false);
   const [isCritical, setIsCritical] = useState(false);
 
-  // Эмоциональные состояния
+  // Определение состояния по текущему здоровью
   useEffect(() => {
     if (!shape) return;
 
     const hpPercent = (shape.current_hp / shape.max_hp) * 100;
-    setIsLowHP(hpPercent <= 0);
-    setIsCritical(hpPercent <= 0);
-    setIsFullHP(hpPercent >= 0);
+    setIsLowHP(hpPercent <= 30);
+    setIsCritical(hpPercent <= 10);
+    setIsFullHP(hpPercent >= 100);
   }, [shape]);
 
-  // Генератор частиц
+  // Генерация визуальных частиц
   const createParticles = (count, color = '#ffffff') => {
     const newParticles = [];
     for (let i = 0; i < count; i++) {
@@ -32,20 +35,16 @@ const PlayerPanel = ({ shape }) => {
       });
     }
     setParticles(newParticles);
-
-    // Автоочистка частиц
     setTimeout(() => setParticles([]), 1500);
   };
 
-  // Эффект при нажатии на кнопку
   const handleButtonClick = (type) => {
     createParticles(8, '#ffd700');
-    // Дополнительная логика по типам кнопок
+    // Доп. логика по типу кнопки (пока не реализована)
   };
 
   if (!shape) return null;
 
-  // Компонент для статусов
   const StatusIcons = ({ statuses }) => {
     if (!statuses || statuses.length === 0) return null;
     return (
@@ -63,7 +62,6 @@ const PlayerPanel = ({ shape }) => {
     );
   };
 
-  // Кнопки вкладок
   const tabs = [
     { id: 'desc', icon: '🧬', title: 'Описание' },
     { id: 'story', icon: '📜', title: 'История' },
@@ -72,25 +70,36 @@ const PlayerPanel = ({ shape }) => {
     { id: 'items', icon: '🎒', title: 'Инвентарь' },
   ];
 
-  // Пиллы для предметов/заклинаний
   const Pill = ({ children }) => (
     <span className="pill" onClick={() => createParticles(3, '#4d9de0')}>
       {children}
     </span>
   );
 
-  // Контент вкладок
   const renderTabContent = () => {
-    // Реализация остаётся без изменений
-    // ...
+    switch (activeTab) {
+      case 'desc':
+        return <div className="tab-pane">Описание персонажа</div>;
+      case 'story':
+        return <div className="tab-pane">История и предыстория</div>;
+      case 'personality':
+        return <div className="tab-pane">Черты характера</div>;
+      case 'magic':
+        return <div className="tab-pane">Заклинания и способности</div>;
+      case 'items':
+        return <div className="tab-pane">Инвентарь и снаряжение</div>;
+      default:
+        return null;
+    }
   };
 
   return (
     <div
       className={`player-main-panel 
-      ${isCritical ? 'critical-state' : ''} 
-      ${isLowHP ? 'low-hp' : ''} 
-      ${isFullHP ? 'full-hp' : ''}`}
+        ${isCritical ? 'critical-state' : ''} 
+        ${isLowHP ? 'low-hp' : ''} 
+        ${isFullHP ? 'full-hp' : ''} 
+        ${isMoving ? 'moving-state' : ''}`}
     >
       {/* Эффекты частиц */}
       {particles.map((particle) => (
@@ -108,20 +117,8 @@ const PlayerPanel = ({ shape }) => {
         />
       ))}
 
-      {/* Левая часть */}
+      {/* Левая панель: HUD */}
       <div className="player-hud">
-        {/* <div
-          className="avatar-container"
-          onClick={() => createParticles(15, '#ffffff')}
-        >
-          <img
-            src={shape.image || '/token.jpg'}
-            alt="avatar"
-            className="avatar"
-          />
-          <StatusIcons statuses={shape.statuses} />
-        </div> */}
-
         <div className="vitals-container">
           <div className="vital-bar hp-bar">
             <label>💖 HP</label>
@@ -136,6 +133,7 @@ const PlayerPanel = ({ shape }) => {
               {shape.current_hp} / {shape.max_hp}
             </span>
           </div>
+
           <div className="vital-bar ap-bar">
             <label>⚡ AP</label>
             <div className="bar-container">
@@ -190,7 +188,7 @@ const PlayerPanel = ({ shape }) => {
         </div>
       </div>
 
-      {/* Правая часть */}
+      {/* Правая панель: вкладки */}
       <div className="player-tab-buttons">
         {tabs.map(({ id, icon, title }) => (
           <button
@@ -204,7 +202,7 @@ const PlayerPanel = ({ shape }) => {
         ))}
       </div>
 
-      {/* Контент выбранной вкладки */}
+      {/* Контент текущей вкладки */}
       <div className="tab-content">{renderTabContent()}</div>
     </div>
   );

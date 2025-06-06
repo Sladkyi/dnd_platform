@@ -1,7 +1,11 @@
 /* Вкладки навигации */
 .nav-tabs {
-    border: none;
+    border-bottom: 2px solid var(--ui-border-primary);
     margin-bottom: 20px;
+    background: var(--modal-pattern-jp),
+        linear-gradient(to right,
+            var(--global-bg-tertiary),
+            var(--global-bg-dark));
 }
 
 .nav-tabs .nav-link {
@@ -18,10 +22,12 @@
     color: var(--tab-hover);
     background-color: var(--tab-hover-bg);
     border-radius: 6px 6px 0 0;
+    box-shadow: inset 0 -1px 0 var(--ui-border-primary);
 }
 
 .nav-tabs .nav-link.active {
     color: var(--tab-hover);
     background-color: var(--tab-active-bg);
     border-radius: 8px 8px 0 0;
-    font-weight: 600; }
+    font-weight: 600;
+    box-shadow: inset 0 -2px 0 var(--ui-border-secondary); }

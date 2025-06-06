@@ -16,7 +16,7 @@
 
 .character-card {
   background: var(--card-bg-secondary);
-  border-radius: 16px;
+  border-radius: var(--radius-large);
   padding: 16px;
   box-shadow:
     4px 4px 10px var(--card-shadow-dark),
@@ -53,7 +53,7 @@
   background: var(--btn-bg-secondary);
   color: var(--text-primary);
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-small);
   cursor: pointer;
   transition: background 0.2s;
 }

@@ -13,9 +13,11 @@
 
 .map-creation-card {
   background: var(--global-bg-secondary);
-  border-radius: 20px;
+  border-radius: var(--radius-large);
   padding: 30px;
-  box-shadow: 8px 8px 15px var(--ui-shadow-medium), -8px -8px 15px var(--ui-shadow-light);
+  box-shadow:
+    8px 8px 15px var(--ui-shadow-medium),
+    -8px -8px 15px var(--ui-shadow-light);
   width: 400px;
   text-align: center;
   color: var(--text-primary);
@@ -43,35 +45,45 @@ h2 {
 .input-field {
   background: var(--card-bg-secondary);
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-main);
   padding: 12px;
   font-size: 16px;
   color: var(--text-primary);
-  box-shadow: inset 5px 5px 10px var(--ui-shadow-dark), inset -5px -5px 10px var(--ui-shadow-light);
+  box-shadow:
+    inset 5px 5px 10px var(--ui-shadow-dark),
+    inset -5px -5px 10px var(--ui-shadow-light);
   transition: box-shadow 0.3s ease;
 }
 
 .input-field:focus {
   outline: none;
-  box-shadow: inset 5px 5px 10px var(--ui-shadow-light), inset -5px -5px 10px var(--ui-shadow-dark);
+  box-shadow:
+    inset 5px 5px 10px var(--ui-shadow-light),
+    inset -5px -5px 10px var(--ui-shadow-dark);
 }
 
 .submit-button {
   background: var(--btn-bg-primary);
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-main);
   padding: 12px;
   font-size: 18px;
   font-weight: bold;
   color: var(--text-primary);
   cursor: pointer;
-  box-shadow: 4px 4px 8px var(--ui-shadow-dark), -4px -4px 8px var(--ui-shadow-light);
-  transition: background 0.3s ease, box-shadow 0.3s ease;
+  box-shadow:
+    4px 4px 8px var(--ui-shadow-dark),
+    -4px -4px 8px var(--ui-shadow-light);
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .submit-button:hover {
   background: var(--btn-bg-hover);
-  box-shadow: 4px 4px 8px var(--ui-shadow-dark), -4px -4px 8px var(--ui-shadow-light);
+  box-shadow:
+    4px 4px 8px var(--ui-shadow-dark),
+    -4px -4px 8px var(--ui-shadow-light);
 }
 
 .submit-button:active {
@@ -86,6 +98,8 @@ h2 {
 .image-preview img {
   width: 100%;
   height: auto;
-  border-radius: 10px;
-  box-shadow: 4px 4px 8px var(--ui-shadow-dark), -4px -4px 8px var(--ui-shadow-light);
+  border-radius: var(--radius-main);
+  box-shadow:
+    4px 4px 8px var(--ui-shadow-dark),
+    -4px -4px 8px var(--ui-shadow-light);
 }

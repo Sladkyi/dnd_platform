@@ -78,7 +78,7 @@ body {
     color: var(--text-primary);
     padding: 12px 24px;
     border: none;
-    border-radius: 15px;
+    border-radius: var(--radius-large);
     font-size: 1rem;
     cursor: pointer;
     box-shadow:
@@ -120,7 +120,7 @@ body {
 /* Карточка карты */
 .map-card {
     background: var(--global-bg-main);
-    border-radius: 20px;
+    border-radius: var(--radius-large);
     overflow: hidden;
     box-shadow:
         10px 10px 20px var(--neomorphic-shadow-dark),
@@ -175,7 +175,7 @@ body {
     color: var(--text-accent);
     border: none;
     padding: 18px 26px;
-    border-radius: 50px;
+    border-radius: var(--radius-round);
     font-size: 1.2rem;
     box-shadow:
         6px 6px 12px var(--neomorphic-shadow-dark),
@@ -194,5 +194,4 @@ body {
 /* Для совместимости клаccов .map-card и .card */
 .map-card,
 .card {
-    background: var(--global-bg-main);
-}
+    background: var(--global-bg-main); }

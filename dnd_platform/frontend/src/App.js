@@ -7,6 +7,7 @@ import EditMap from './components/EditMap'; // Новый компонент д�
 import CreateRoomElement from './components/CreateRoomElement'; // Новый компонент для создания комнаты
 import JoinSessionPage from './components/JoinSessionPage';
 import './components/styles/theme.css';
+import PlayerAgent from './components/PlayerAgent';
 
 const App = () => {
   return (
@@ -29,7 +30,8 @@ const App = () => {
             path="/create-room/:profileId"
             element={<CreateRoomElement />}
           />
-
+          {/* Отдельный вид для игрока */}
+          <Route path="/player/:mapId/:shapeId" element={<PlayerAgent />} />
           <Route path="/join/:sessionId" element={<JoinSessionPage />} />
         </Routes>
       </div>

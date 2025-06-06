@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "prettier": "^3.5.3"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21"
   }
 }

@@ -1,0 +1,10 @@
+.moving-state {
+    border: 2px solid #4d9de0;
+    background-color: rgba(77, 157, 224, 0.1);
+}
+
+.movement-indicator {
+    padding: 8px;
+    text-align: center;
+    font-weight: bold;
+    color: #4d9de0; }

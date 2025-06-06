@@ -1,24 +1,22 @@
-// EditMap.jsx (с поддержкой главной карты и вызовом EditingEntity)
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+// EditMap.jsx (с поддержкой главной карты, игроков и мастера)
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
-import { Stage } from 'react-konva';
 import { useMapSocket } from '../hooks/useMapSocket';
 import {
   fetchMap,
   fetchRoom,
   fetchRooms,
+  createRoom,
   updateRoomId,
   updateShapePosition,
+  createSessionURL,
 } from '../services/MapService';
 
 import MapStage from './MapStage';
-import ShapeLayer from './ShapeLayer';
-import RoomLayer from './RoomLayer';
-import PointLayer from './PointLayer';
 import RoomList from './RoomList';
 import MasterToolbar from './MasterToolbar';
 import ContextMenu from './ContextMenu';
-import PlayerPanel from './PlayerPanel';
+import PlayerAgent from './PlayerAgent';
 import EditingEntity from './EditingEntity/EditingEntity';
 import './styles/EditMap.css';
 
@@ -34,12 +32,12 @@ const EditMap = () => {
   const [rooms, setRooms] = useState([]);
   const [mainRoom, setMainRoom] = useState(null);
   const [currentRoom, setCurrentRoom] = useState(null);
+  const [roomsVisible, setRoomsVisible] = useState(false);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [selectedShape, setSelectedShape] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
 
-  // --- Load map data
   useEffect(() => {
     const loadData = async () => {
       const response = await fetchMap(id);
@@ -68,7 +66,6 @@ const EditMap = () => {
     loadData();
   }, [id]);
 
-  // --- WebSocket: обновление фигур
   useMapSocket(id, (data) => {
     setShapes((prev) =>
       prev.map((s) => (s.id === data.id ? { ...s, ...data } : s))
@@ -84,12 +81,57 @@ const EditMap = () => {
     await updateRoomId(id, room.id);
   };
 
+  const toggleRooms = () => {
+    setRoomsVisible((prev) => !prev);
+  };
+
+  const handleCreateRoom = async () => {
+    const name = prompt('Название новой комнаты:');
+    if (!name) return;
+    try {
+      const { data } = await createRoom(id, { name });
+      setRooms((prev) => [...prev, data]);
+    } catch (err) {
+      console.error('Failed to create room', err);
+    }
+  };
+
+  const handleSendMessage = () => {
+    const message = prompt('Введите сообщение');
+    if (message) {
+      console.log('Send message:', message);
+    }
+  };
+
+  const handleResetMap = () => {
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  };
+
+  const handleEndSession = () => {
+    if (window.confirm('Завершить сессию?')) {
+      console.log('Session ended');
+    }
+  };
+
+  const handleInvitePlayers = async () => {
+    try {
+      const { data } = await createSessionURL(id, {
+        last_opened_room_id: currentRoom ? currentRoom.id : null,
+      });
+      window.prompt('Ссылка для приглашения игроков', data.join_url);
+    } catch (err) {
+      console.error('Failed to create session URL', err);
+    }
+  };
+
   const handleShapeDrag = async (updatedShape) => {
     setShapes((prev) =>
       prev.map((s) => (s.id === updatedShape.id ? updatedShape : s))
     );
     await updateShapePosition(updatedShape.id, {
-      shapes: [updatedShape],
+      x: updatedShape.x,
+      y: updatedShape.y,
     });
   };
 
@@ -99,7 +141,6 @@ const EditMap = () => {
     }
   };
   const handleShapeDoubleClick = (shape) => {
-    console.log('Double clicked:', shape);
     setSelectedShape(shape);
     setShowEditor(true);
   };
@@ -112,20 +153,9 @@ const EditMap = () => {
 
   if (role === 'player') {
     const shape = shapes.find((s) => String(s.id) === String(shapeId));
-    return (
-      <div className="edit-map-container">
-        <Stage
-          width={window.innerWidth}
-          height={window.innerHeight}
-          scaleX={scale}
-          scaleY={scale}
-        >
-          <RoomLayer room={currentRoom || mainRoom} />
-          <ShapeLayer shapes={[shape]} onDrag={handleShapeDrag} />
-        </Stage>
-        <PlayerPanel shape={shape} />
-      </div>
-    );
+    const room = currentRoom || mainRoom;
+
+    return <PlayerAgent shapeId={shapeId} mapId={id} scale={scale} />;
   }
 
   return (
@@ -142,14 +172,17 @@ const EditMap = () => {
         onDragShape={handleShapeDrag}
         onDoubleClickShape={handleShapeDoubleClick}
         selectedShape={selectedShape}
-        setSelectedShape={setSelectedShape} // ← вот эта строка важна
+        setSelectedShape={setSelectedShape}
       />
-      <RoomList
-        rooms={rooms}
-        mainRoom={mainRoom}
-        currentRoom={currentRoom}
-        onSelect={handleRoomChange}
-      />
+
+      {roomsVisible && (
+        <RoomList
+          rooms={rooms}
+          mainRoom={mainRoom}
+          currentRoom={currentRoom}
+          onSelect={handleRoomChange}
+        />
+      )}
 
       <MasterToolbar
         mapTitle={mapData.title}
@@ -158,7 +191,14 @@ const EditMap = () => {
         mapId={id}
         userId={mapData.user}
         onManualEdit={handleManualEditShape}
+        onToggleRooms={toggleRooms}
+        onAddRoom={handleCreateRoom}
+        onSendMessage={handleSendMessage}
+        onInvitePlayers={handleInvitePlayers}
+        onResetMap={handleResetMap}
+        onEndSession={handleEndSession}
       />
+
       <ContextMenu />
 
       <EditingEntity
