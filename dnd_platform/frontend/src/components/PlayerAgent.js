@@ -2,18 +2,58 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import PlayerView from './PlayerView';
 import { fetchMap, fetchRoom } from '../services/MapService';
 import { useMapSocket } from '../hooks/useMapSocket';
-import throttle from 'lodash/throttle';
+import useMovementEngine from '../hooks/useMovementEngine';
+import { handleShapeDrag } from '../services/shapeHelpers';
 
-const PlayerAgent = ({ shapeId, mapId, scale }) => {
+const PlayerAgent = ({ shapeId, mapId, scale: initialScale }) => {
   const [mapData, setMapData] = useState(null);
   const [shape, setShape] = useState(null);
   const [shapes, setShapes] = useState([]);
   const [room, setRoom] = useState(null);
-  const [isMoving, setIsMoving] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [scale, setScale] = useState(initialScale || 1);
+  const [tick, setTick] = useState(0);
 
-  // Загрузка карты и фигуры
+  const forceRerender = useCallback(() => setTick((t) => t + 1), []);
+
+  const handleSocketMessage = useCallback(
+    (data) => {
+      if (String(data.id) === String(shapeId)) {
+        setShape((prev) => ({ ...prev, ...data }));
+        positionRef.current = { x: data.x, y: data.y };
+        forceRerender();
+      }
+      setShapes((prev) =>
+        prev.map((s) => (s.id === data.id ? { ...s, ...data } : s))
+      );
+    },
+    [shapeId]
+  );
+
+  const socket = useMapSocket(mapId, handleSocketMessage);
+
+  const sendPosition = useCallback(
+    (coords) => {
+      if (shape?.id && socket?.readyState === WebSocket.OPEN) {
+        socket.send(
+          JSON.stringify({
+            action: 'move',
+            payload: { id: shape.id, ...coords },
+          })
+        );
+      }
+      handleShapeDrag({ ...shape, ...coords }, setShapes);
+    },
+    [shape, socket, setShapes]
+  );
+
+  const { positionRef, setTarget, isMoving } = useMovementEngine({
+    speed: 5,
+    onUpdate: forceRerender,
+    onFinish: sendPosition,
+  });
+
   useEffect(() => {
-    // Загрузка данных при изменении mapId или shapeId
     if (!mapId || !shapeId) return;
 
     const load = async () => {
@@ -24,6 +64,9 @@ const PlayerAgent = ({ shapeId, mapId, scale }) => {
         (s) => String(s.id) === String(shapeId)
       );
       setShape(playerShape);
+      if (playerShape) {
+        positionRef.current = { x: playerShape.x, y: playerShape.y };
+      }
 
       if (data.last_opened_room_id) {
         const roomRes = await fetchRoom(data.last_opened_room_id);
@@ -34,85 +77,12 @@ const PlayerAgent = ({ shapeId, mapId, scale }) => {
     load();
   }, [mapId, shapeId]);
 
-  const handleShapeMoveLocal = useCallback(
-    (coords) => {
-      if (!shape) return;
-      setShape((prev) => ({ ...prev, ...coords }));
-      setShapes((prev) =>
-        prev.map((s) => (s.id === shape.id ? { ...s, ...coords } : s))
-      );
-    },
-    [shape?.id] // Зависим только от id, а не от всего объекта
-  );
-
-  const handleSocketMessage = useCallback(
-    (data) => {
-      setShapes((prev) =>
-        prev.map((s) => (s.id === data.id ? { ...s, ...data } : s))
-      );
-      if (String(data.id) === String(shapeId)) {
-        setShape((prev) => ({ ...prev, ...data }));
-      }
-    },
-    [shapeId]
-  );
-
-  const socket = useMapSocket(mapId, handleSocketMessage);
-
-  // Отправка координат на сервер
-  const sendPosition = useCallback(
-    (coords) => {
-      if (shape?.id && socket?.readyState === WebSocket.OPEN) {
-        socket.send(
-          JSON.stringify({
-            action: 'move',
-            payload: { id: shape.id, x: coords.x, y: coords.y },
-          })
-        );
-      }
-    },
-    [shape?.id, socket]
-  );
-
-  const throttledSendPosition = useMemo(
-    () => (shape?.id ? throttle(sendPosition, 500) : () => {}),
-    [shape?.id, sendPosition]
-  );
-
-  useEffect(
-    () => () => throttledSendPosition.cancel?.(),
-    [throttledSendPosition]
-  );
-
-  // Локальное обновление
-  const updateLocalShape = useCallback(
-    (coords) => {
-      if (!shape) return;
-      setShape((prev) => ({ ...prev, ...coords }));
-      setShapes((prev) =>
-        prev.map((s) => (s.id === shape.id ? { ...s, ...coords } : s))
-      );
-    },
-    [shape?.id] // <-- поменял зависимость на id
-  );
-  // Обновление + отправка (движение)
   const handleShapeMoveAndSend = useCallback(
     (coords) => {
-      updateLocalShape(coords);
-      throttledSendPosition(coords);
+      setTarget(coords);
     },
-    [updateLocalShape, throttledSendPosition]
+    [setTarget]
   );
-
-  // Финальная отправка при окончании drag'n'drop
-  // const handleDragEnd = useCallback(
-  //   (coords) => {
-  //     throttledSendPosition.cancel();
-  //     sendPosition(coords);
-  //     setIsMoving(false);
-  //   },
-  //   [sendPosition, throttledSendPosition]
-  // );
 
   if (!mapData || !shape) return <div>Загрузка...</div>;
 
@@ -123,14 +93,17 @@ const PlayerAgent = ({ shapeId, mapId, scale }) => {
 
   return (
     <PlayerView
-      shape={shape}
-      shapes={shapes}
+      shape={{ ...shape, ...positionRef.current }}
+      shapes={shapes.map((s) =>
+        s.id === shape.id ? { ...s, ...positionRef.current } : s
+      )}
       room={roomData}
       scale={scale}
-      onShapeMoveLocal={handleShapeMoveLocal} // 🔧 ← ЭТОГО НЕ ХВАТАЛО
+      position={position}
+      setPosition={setPosition}
+      setScale={setScale}
       onShapeMoveAndSend={handleShapeMoveAndSend}
       isMoving={isMoving}
-      setIsMoving={setIsMoving} // 🔧 ← ЭТОГО ТОЖЕ
     />
   );
 };

@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { useMapSocket } from '../hooks/useMapSocket';
+import { handleShapeDrag } from '../services/shapeHelpers';
 import {
   fetchMap,
   fetchRoom,
@@ -148,26 +149,9 @@ const EditMap = () => {
     }
   };
 
-  const handleShapeDrag = async (updatedShape) => {
-    console.log('shapeData отправляется:', updatedShape);
-
-    setShapes((prev) =>
-      prev.map((s) => (s.id === updatedShape.id ? updatedShape : s))
-    );
-
-    // Собираем полный объект, чтобы сервер не ругался
-    const shapeDataToSend = {
-      id: updatedShape.id,
-      x: updatedShape.x,
-      y: updatedShape.y,
-      fill: updatedShape.fill || '#FFFFFF',
-      type: updatedShape.type || 'circle',
-      // добавь другие поля, если нужно
-    };
-
-    await updateShapePosition(updatedShape.id, shapeDataToSend);
+  const handleShapeDragWrapper = (updatedShape) => {
+    handleShapeDrag(updatedShape, setShapes);
   };
-
   const handleManualEditShape = () => {
     if (selectedShape) {
       setShowEditor(true);
@@ -202,7 +186,7 @@ const EditMap = () => {
         points={pointsOfInterest}
         room={currentRoom}
         mainRoom={mainRoom}
-        onDragShape={handleShapeDrag}
+        onDragShape={handleShapeDragWrapper}
         onDoubleClickShape={handleShapeDoubleClick}
         selectedShape={selectedShape}
         setSelectedShape={setSelectedShape}
