@@ -395,3 +395,60 @@ button {
         padding: 15px;
     }
 }
+
+/* Дополнительные стили для RacePickerModal */
+.race-size-badge {
+    background: rgba(112, 161, 255, 0.15);
+    color: var(--highlight);
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-right: 10px;
+}
+
+.languages-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.ability-badge {
+    background: rgba(40, 45, 60, 0.7) !important;
+    font-weight: 500;
+    padding: 6px 10px;
+}
+
+.stat-item .stat-label {
+    display: flex;
+    align-items: center;
+}
+
+.race-features h6 {
+    display: flex;
+    align-items: center;
+}
+.attack-info {
+    width: 89%;
+}
+/* Адаптивные стили */
+@media (max-width: 768px) {
+    .filter-panel .row {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .filter-panel .col-md-7,
+    .filter-panel .col-md-5 {
+        width: 100%;
+    }
+
+    .class-card {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .class-grid .col-lg-6 {
+        width: 100%;
+    } }

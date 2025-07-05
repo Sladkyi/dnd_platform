@@ -31,7 +31,7 @@ const ClassPickerModal = ({ show, onClose, onSelect, profileId }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [complexityFilter, setComplexityFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
-
+  const [selectedClass, setSelectedClass] = useState(null);
   // Загрузка данных
   useEffect(() => {
     if (!show || !profileId) return;
@@ -141,24 +141,17 @@ const ClassPickerModal = ({ show, onClose, onSelect, profileId }) => {
     }
   }, [show]);
 
-  const handleSelect = (classId) => {
-    if (!classId) return;
-    setSelectedClassId(classId);
+  const handleSelect = (cls) => {
+    setSelectedClass(cls);
   };
 
   const handleConfirm = () => {
-    if (!selectedClassId) {
+    if (!selectedClass) {
       setError('Не выбран класс');
       return;
     }
 
-    const selectedClass = classes.find((c) => c.id === selectedClassId);
-    if (!selectedClass) {
-      setError('Выбранный класс не найден');
-      return;
-    }
-
-    onSelect(selectedClassId);
+    onSelect(selectedClass); // <== теперь передаём объект
     onClose();
   };
 
@@ -370,8 +363,8 @@ const ClassPickerModal = ({ show, onClose, onSelect, profileId }) => {
               {filteredClasses.map((cls) => (
                 <Col key={cls.id} lg={4} md={6} className="mb-4">
                   <div
-                    className={`class-card ${selectedClassId === cls.id ? 'selected' : ''}`}
-                    onClick={() => handleSelect(cls.id)}
+                    className={`class-card ${selectedClass?.id === cls.id ? 'selected' : ''}`}
+                    onClick={() => handleSelect(cls)}
                     data-testid={`class-card-${cls.id}`}
                   >
                     <div className="class-header">
@@ -425,12 +418,9 @@ const ClassPickerModal = ({ show, onClose, onSelect, profileId }) => {
 
       <Modal.Footer className="justify-content-between">
         <div>
-          {selectedClassId && (
+          {selectedClass && (
             <span className="selected-class-info">
-              Выбран:{' '}
-              <strong>
-                {classes.find((c) => c.id === selectedClassId)?.name}
-              </strong>
+              Выбран: <strong>{selectedClass.name}</strong>
             </span>
           )}
         </div>
@@ -441,7 +431,7 @@ const ClassPickerModal = ({ show, onClose, onSelect, profileId }) => {
           <Button
             variant="primary"
             onClick={handleConfirm}
-            disabled={!selectedClassId || isLoading}
+            disabled={!selectedClass || isLoading}
             className="ms-2"
           >
             {isLoading ? (

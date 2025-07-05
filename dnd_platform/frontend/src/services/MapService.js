@@ -6,17 +6,19 @@ export const updateRoomId = (mapId, roomId) =>
   axiosInstance.patch(`/maps/${mapId}/`, { last_opened_room_id: roomId });
 
 export const updateShapePosition = (shapeId, shapeData) =>
-  axiosInstance.put(`/maps/changePosition/${shapeId}/`, {
+  axiosInstance.patch(`/maps/changePosition/${shapeId}/`, {
     shapes: [shapeData],
   });
 
-export const createShape = (mapId, mapTitle, userId, shapeData) =>
-  axiosInstance.put(`/maps/change/${mapId}/`, {
-    title: mapTitle,
-    user: userId,
-    shapes: [shapeData],
-  });
-
+// export const createShape = (mapId, mapTitle, userId, shapeData) =>
+//   axiosInstance.put(`/maps/change/${mapId}/`, {
+//     title: mapTitle,
+//     user: userId,
+//     shapes: [shapeData],
+//   });
+export const fetchShapeById = (shapeId) => {
+  return axiosInstance.get(`/shapes/${shapeId}/`);
+};
 export const fetchRooms = (mapId) =>
   axiosInstance.get(`/maps/GetRooms/${mapId}/`);
 
@@ -24,6 +26,13 @@ export const fetchMainRoom = (mapId) =>
   axiosInstance.get(`/maps/getMainRoom/${mapId}/`);
 
 // --- Дополнительные функции API ---
+export const createShape = (shapeData) => {
+  return axiosInstance.post('/shapes/create/', shapeData);
+};
+
+export const fetchShapes = (mapId) => {
+  return axiosInstance.get(`/maps/${mapId}/shapes/`);
+};
 
 // Создать новую комнату
 export const createRoom = (mapId, roomData) =>
@@ -64,3 +73,82 @@ export const joinSessionWithShape = (sessionId, data) =>
 // Получить информацию о сессии или присоединиться
 export const joinGame = (sessionId) =>
   axiosInstance.get(`/maps/join/${sessionId}/`);
+
+// Получить все заклинания доступные для игрока
+
+export const GetPlayerSpells = (playerId) =>
+  axiosInstance.get(`/spells/getByCreator/${playerId}/`);
+
+export const createSpell = (spellData) =>
+  axiosInstance.post('/spells/create/', spellData);
+
+// Обновить заклинание
+export const updateSpell = (id, spellData) =>
+  axiosInstance.put(`/spells/update/${id}/`, spellData);
+
+export const deleteSpellFromServer = (id) => {
+  return axiosInstance.delete(`/spells/${id}/delete/`);
+};
+
+// Получить все классы, созданные пользователем
+export const GetPlayerClasses = (playerId) =>
+  axiosInstance.get(`/classes/getByCreator/${playerId}/`);
+
+export const createClass = (classData) =>
+  axiosInstance.post('/classes/create/', classData);
+
+export const updateClass = (id, classData) =>
+  axiosInstance.put(`/classes/update/${id}/`, classData);
+
+// Получить все расы, созданные пользователем
+export const GetPlayerRaces = (playerId) =>
+  axiosInstance.get(`/races/getByCreator/${playerId}/`);
+
+export const createRace = (raceData) =>
+  axiosInstance.post('/races/create/', raceData);
+
+export const updateRace = (id, raceData) =>
+  axiosInstance.put(`/races/update/${id}/`, raceData);
+
+export const createMap = (id, formData) =>
+  axiosInstance.post(`/maps/change/${id}/`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
+// Получить все предметы, созданные пользователем
+export const GetPlayerItems = (playerId) =>
+  axiosInstance.get(`/items/getByCreator/${playerId}/`);
+
+export const createItem = (itemData) =>
+  axiosInstance.post('/items/create/', itemData);
+
+export const updateItem = (id, itemData) =>
+  axiosInstance.put(`/items/update/${id}/`, itemData);
+
+export const deleteClass = (id) =>
+  axiosInstance.delete(`/classes/${id}/delete/`);
+
+export const deleteRace = (id) => axiosInstance.delete(`/races/${id}/delete/`);
+
+export const deleteItem = (id) => axiosInstance.delete(`/items/${id}/delete/`);
+
+export const GetPlayerAttacks = (ownerId) =>
+  axiosInstance.get(`/attacks/getByOwner/${ownerId}/`);
+
+// Создать новую атаку
+export const createAttack = (attackData) =>
+  axiosInstance.post('/attacks/create/', attackData);
+
+// Обновить атаку по id
+export const updateAttack = (id, attackData) =>
+  axiosInstance.put(`/attacks/update/${id}/`, attackData);
+
+// Удалить атаку по id
+export const deleteAttack = (id) =>
+  axiosInstance.delete(`/attacks/${id}/delete/`);
+
+export const fetchSessionPlayers = (sessionId) => {
+  return axiosInstance.get(`/sessions/${sessionId}/players/`);
+};

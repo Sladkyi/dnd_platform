@@ -46,7 +46,7 @@ const ShapeLayer = ({
     <Layer>
       {shapes.map((shape, index) => (
         <KonvaImage
-          key={shape.id}
+          key={shape.id} // 🔥
           id={String(shape.id)}
           image={images[index]}
           x={shape.x}

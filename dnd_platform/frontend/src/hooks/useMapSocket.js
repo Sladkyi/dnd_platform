@@ -1,27 +1,34 @@
-// useMapSocket.js
 import { useEffect, useRef } from 'react';
 
-export const useMapSocket = (mapId, onMessage) => {
+export const useMapSocket = (mapId, onMessage, enabled = true) => {
   const socketRef = useRef(null);
   const messageHandlerRef = useRef(onMessage);
 
-  // Обновляем колбэк без пересоздания сокета
   useEffect(() => {
     messageHandlerRef.current = onMessage;
   }, [onMessage]);
 
   useEffect(() => {
-    if (!mapId) return;
+    if (!mapId || !enabled) return;
 
-    const socket = new WebSocket(`ws://localhost:8000/ws/map/${mapId}/`);
+    let socket;
+    let isActive = true;
+
+    const token = localStorage.getItem('access');
+    socket = new WebSocket(
+      `ws://localhost:8000/ws/map/${mapId}/?token=${token}`
+    );
     socketRef.current = socket;
 
     socket.onopen = () => {
+      if (!isActive) return;
       console.log('🟢 WebSocket открыт:', socket.url);
     };
 
     socket.onmessage = (event) => {
+      if (!isActive) return;
       try {
+        console.log('Сообщение по сокету:', event.data);
         const data = JSON.parse(event.data);
         messageHandlerRef.current?.(data);
       } catch (err) {
@@ -29,13 +36,22 @@ export const useMapSocket = (mapId, onMessage) => {
       }
     };
 
-    socket.onerror = (err) => console.error('WebSocket ошибка:', err);
-    socket.onclose = () => console.warn('WebSocket закрыт');
+    socket.onerror = (err) => {
+      if (!isActive) return;
+      console.error('WebSocket ошибка:', err);
+    };
+
+    socket.onclose = () => {
+      if (!isActive) return;
+      console.warn('WebSocket закрыт');
+    };
 
     return () => {
+      console.warn('🔌 WebSocket отключён');
+      isActive = false;
       socket.close();
     };
-  }, [mapId]); // ВАЖНО: зависит только от mapId
+  }, [mapId, enabled]);
 
-  return socketRef.current;
+  return enabled ? socketRef.current : null;
 };

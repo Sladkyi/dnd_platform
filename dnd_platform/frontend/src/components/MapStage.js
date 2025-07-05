@@ -19,6 +19,7 @@ const MapStage = ({
   selectedShape,
   setSelectedShape,
   onSelectRoom,
+  backgroundUrl, // 👈 добавь сюда
 }) => {
   const stageRef = useRef();
   const [isDragging, setIsDragging] = useState(false);
@@ -67,7 +68,7 @@ const MapStage = ({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
     >
-      <RoomLayer room={room || mainRoom} />
+      <RoomLayer backgroundUrl={backgroundUrl} />
       <ShapeLayer
         shapes={shapes}
         onDrag={onDragShape}

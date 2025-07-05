@@ -13,13 +13,11 @@
     transition: all 0.3s ease;
     font-size: 0.8rem;
 }
-
 .dice-button:hover {
     background: var(--dice-button-hover-bg);
     color: var(--dice-roll);
-    transform: scale(1.05);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
 }
-
 /* Недавние броски */
 .recent-rolls {
     background: var(--recent-rolls-bg);

@@ -2,7 +2,7 @@ import React from 'react';
 import { Stage } from 'react-konva';
 import RoomLayer from './RoomLayer';
 import ShapeLayer from './ShapeLayer';
-import PlayerPanel from './PlayerPanel';
+import ActionPanel from '../components/ActionPanel/PlayerPanel';
 
 const PlayerView = ({
   shape,
@@ -14,9 +14,21 @@ const PlayerView = ({
   setScale,
   onShapeMoveAndSend,
   isMoving,
+  mapData,
 }) => {
+  const backgroundUrl =
+    room?.background_image || mapData?.full_card_map_image || '';
+
+  const handleWheel = (e) => {
+    const scaleBy = 1.1;
+    let newScale = scale;
+    if (e.evt.deltaY < 0) newScale *= scaleBy;
+    else newScale /= scaleBy;
+    setScale(Math.min(Math.max(newScale, 0.1), 3));
+  };
+
   const handleMapClick = (e) => {
-    if (isMoving) return;
+    if (e.evt.button !== 0) return;
 
     const stage = e.target.getStage();
     const pointer = stage.getPointerPosition();
@@ -29,7 +41,7 @@ const PlayerView = ({
   };
 
   return (
-    <div className="edit-map-container">
+    <div className="edit-map-container player-view-container">
       <Stage
         width={window.innerWidth}
         height={window.innerHeight}
@@ -40,8 +52,9 @@ const PlayerView = ({
         draggable
         onDragEnd={(e) => setPosition({ x: e.target.x(), y: e.target.y() })}
         onMouseDown={handleMapClick}
+        onWheel={handleWheel}
       >
-        <RoomLayer room={room} />
+        <RoomLayer backgroundUrl={backgroundUrl} />
         <ShapeLayer
           shapes={shapes}
           onDragMove={() => {}}
@@ -49,7 +62,9 @@ const PlayerView = ({
           canDragShape={(s) => s.id === shape.id}
         />
       </Stage>
-      <PlayerPanel shape={shape} isMoving={isMoving} />
+
+      {/* 👇 Панель игрока, прибитая к низу */}
+      <ActionPanel shape={shape} isMoving={isMoving} />
     </div>
   );
 };

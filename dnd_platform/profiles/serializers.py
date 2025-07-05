@@ -4,15 +4,18 @@ from maps.serializers import MapSerializer
 from maps.models import Shape
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
     username = serializers.CharField(source='user.username', read_only=True)
-    maps = MapSerializer(source='user.map_set', many=True)  # Используем обратную связь для получения всех карт
+    maps = MapSerializer(source='user.map_set', many=True)
 
     class Meta:
         model = UserProfile
-        fields = ['id', 'username', 'bio', 'avatar', 'maps']
+        fields = ['id', 'user_id', 'username', 'bio', 'avatar', 'maps']
 
 class EntitySerializer(serializers.ModelSerializer):
-        map = MapSerializer()  # вложенный сериализатор
-        class Meta:
-            model = Shape
-            fields = '__all__'
+    map = MapSerializer(read_only=True, allow_null=True)  # вложенный сериализатор
+
+    class Meta:
+        model = Shape
+        fields = '__all__'
+

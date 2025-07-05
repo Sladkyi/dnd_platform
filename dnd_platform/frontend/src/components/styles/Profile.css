@@ -1,197 +1,272 @@
-/* Переписанный CSS без жестко закодированных цветов */
+/* Profile.css — refined macOS 14 style, closer to native */
 
-/* Общие стили для страницы */
-body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: var(--global-bg-main);
-    color: var(--text-main);
+:root {
+    --bg-main: rgba(28, 28, 30, 0.65);
+    --bg-tile: rgba(44, 44, 46, 0.65);
+    --text-primary: rgba(255, 255, 255, 0.95);
+    --text-secondary: rgba(235, 235, 245, 0.55);
+    --accent: rgba(255, 255, 255, 0.75);
+    --accent-hover: rgba(255, 255, 255, 0.95);
+    --border-light: rgba(255, 255, 255, 0.08);
+    --blur-bg: blur(30px);
+    --radius: 18px;
+    --transition: all 0.2s ease-in-out;
 }
 
-/* Контейнер профиля */
-.profile-container {
-    max-width: 1200px;
+.profile-wrapper {
+    max-width: 1000px;
+    margin: 60px auto;
+    padding: 40px;
+    background: var(--bg-main);
+    border-radius: var(--radius);
+    border: 1px solid var(--border-light);
+    backdrop-filter: var(--blur-bg);
+    -webkit-backdrop-filter: var(--blur-bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.3);
+}
+.card {
+    background-color: black;
+
 }
 
-/* Шапка профиля */
+.creation-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 1.2rem 0;
+    flex-wrap: wrap;
+}
+
+.creation-buttons button {
+    background: var(--panel-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--ui-border-primary);
+    border-radius: 12px;
+    padding: 10px 16px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.creation-buttons button:hover {
+    background: var(--accent);
+    color: white;
+}
 .profile-header {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    text-align: center;
+    gap: 40px;
     margin-bottom: 40px;
+    flex-wrap: wrap;
 }
 
-/* Аватар */
-.avatar-container {
-    margin-bottom: 20px;
+.avatar-block {
+    flex-shrink: 0;
 }
 
-.profile-avatar {
-    width: 150px;
-    height: 150px;
+.avatar-img {
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
     object-fit: cover;
-    background: var(--global-bg-main);
-    box-shadow:
-        8px 8px 16px var(--neomorphic-shadow-dark),
-        -8px -8px 16px var(--neomorphic-shadow-light);
+    border: 1px solid var(--border-light);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
 }
 
-/* Имя и био */
-.profile-name {
-    font-size: 2rem;
-    margin: 10px 0 5px;
+.profile-details {
+    flex: 1;
+    min-width: 200px;
+}
+
+.username {
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0 0 8px;
     color: var(--text-primary);
 }
 
-.profile-bio {
-    font-size: 1.1rem;
+.bio {
     color: var(--text-secondary);
+    margin-bottom: 18px;
+    font-size: 15px;
+    line-height: 1.6;
 }
 
-.section-title {
-    color: var(--text-primary);
+.stats {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
 }
 
-.card-title {
-    color: var(--text-primary);
-}
-
-/* Основной контент */
-.main-content {
+.stat {
     display: flex;
     flex-direction: column;
-    gap: 40px;
-}
-
-/* Блок действий */
-.actions-section {
-    display: flex;
-    justify-content: space-between;
-}
-
-/* Кнопка */
-.primary-button {
-    background: var(--global-bg-main);
-    color: var(--text-primary);
-    padding: 12px 24px;
-    border: none;
-    border-radius: var(--radius-large);
-    font-size: 1rem;
-    cursor: pointer;
-    box-shadow:
-        6px 6px 12px var(--neomorphic-shadow-dark),
-        -6px -6px 12px var(--neomorphic-shadow-light);
-    transition: all 0.3s ease;
-}
-
-.primary-button:hover {
-    box-shadow:
-        inset 6px 6px 12px var(--neomorphic-shadow-dark),
-        inset -6px -6px 12px var(--neomorphic-shadow-light);
-}
-
-/* Секция карточек */
-.cards-section {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.section-header {
-    display: flex;
-    justify-content: space-between;
     align-items: center;
 }
 
-.section-title {
-    font-size: 1.8rem;
-}
-
-/* Сетка карт */
-.cards-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-}
-
-/* Карточка карты */
-.map-card {
-    background: var(--global-bg-main);
-    border-radius: var(--radius-large);
-    overflow: hidden;
-    box-shadow:
-        10px 10px 20px var(--neomorphic-shadow-dark),
-        -10px -10px 20px var(--neomorphic-shadow-light);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    width: 30%;
-}
-
-.map-card:hover {
-    transform: translateY(-5px);
-}
-
-.card-image {
-    width: 100%;
-    height: 150px;
-    object-fit: cover;
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
-}
-
-/* Содержимое карточки */
-.card-content {
-    padding: 15px;
-}
-
-.card-title {
-    font-size: 1.2rem;
-    margin-bottom: 8px;
+.stat span {
+    font-size: 20px;
+    font-weight: 500;
     color: var(--text-primary);
 }
 
-.card-meta {
-    font-size: 0.9rem;
-    color: var(--text-tertiary);
+.stat label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+.logout {
+    background: transparent;
+    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+    padding: 8px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: var(--transition);
+    font-weight: 500;
+    margin-left: auto;
+}
+
+.logout:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.profile-tabs {
+    display: flex;
+    gap: 10px;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 25px;
+}
+
+.profile-tabs button {
+    background: transparent;
+    border: none;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 10px 10px 0 0;
+    transition: var(--transition);
+}
+
+.profile-tabs button.active {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-primary);
+}
+
+.profile-content {
+    min-height: 240px;
+}
+
+.map-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+.map-tile {
+    background: var(--bg-tile);
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border-light);
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.tile-img img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.tile-info {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tile-info h3 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--text-primary);
+}
+
+.tile-meta {
+    font-size: 12px;
+    color: var(--text-secondary);
     display: flex;
     justify-content: space-between;
 }
 
-/* Раздел между секциями */
-.main-content>section:not(:last-child) {
-    border-bottom: 1px solid var(--section-border);
-    padding-bottom: 30px;
+.tile-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
 }
 
-/* Кнопка "Запустить игру" */
-.fab-button {
+.tile-actions button {
+    flex: 1;
+    padding: 7px 10px;
+    font-size: 13px;
+    border-radius: 9px;
+    border: 1px solid var(--border-light);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.tile-actions button:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.fab {
     position: fixed;
     bottom: 30px;
     right: 30px;
-    background: var(--global-bg-main);
-    color: var(--text-accent);
-    border: none;
-    padding: 18px 26px;
-    border-radius: var(--radius-round);
-    font-size: 1.2rem;
-    box-shadow:
-        6px 6px 12px var(--neomorphic-shadow-dark),
-        -6px -6px 12px var(--neomorphic-shadow-light);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    font-size: 26px;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border: 1px solid var(--border-light);
     cursor: pointer;
-    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    transition: var(--transition);
 }
 
-.fab-button:hover {
-    box-shadow:
-        inset 6px 6px 12px var(--neomorphic-shadow-dark),
-        inset -6px -6px 12px var(--neomorphic-shadow-light);
-    color: var(--text-accent-hover);
+.fab:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.05);
 }
 
-/* Для совместимости клаccов .map-card и .card */
-.map-card,
-.card {
-    background: var(--global-bg-main); }
+@media (max-width: 600px) {
+    .profile-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .logout {
+        margin-top: 20px;
+        margin-left: 0;
+    }
+
+    .stats {
+        justify-content: center;
+    }
+}

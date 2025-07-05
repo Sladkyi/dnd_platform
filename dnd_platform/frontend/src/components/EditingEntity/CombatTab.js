@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Row, Col, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import {
   HeartPulse,
@@ -7,774 +7,840 @@ import {
   Stopwatch,
   Dice5,
   Plus,
-  Dash,
   ArrowRepeat,
+  ArrowDown,
+  ArrowUp,
+  Check,
 } from 'react-bootstrap-icons';
+import {
+  FaCrosshairs,
+  FaFire,
+  FaSnowflake,
+  FaBolt,
+  FaSkull,
+  FaTrash,
+} from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
+import AttackPickerModal from '../AttackPickerModal';
+import { GetPlayerAttacks } from '../../services/MapService';
+import { Trash } from 'react-bootstrap-icons';
 
-const CombatTab = ({ formData, handleChange, addAttack, removeAttack }) => {
-  // Цветовая схема
-  const colors = {
-    background: '#0a0a12', // Темно-синий фон
-    panel: '#121226', // Панели
-    outline: '#2B3A67', // Индиго контуры
-    accent: '#FF6B6B', // Кораллово-красный акцент
-    text: '#F0F0F0', // Молочный белый текст
-    health: '#FF6B6B', // Красный для здоровья
-    defense: '#4A6580', // Синий для защиты
-    attacks: '#2B3A67', // Индиго для атак
-    initiative: '#F0F0F0', // Белый для инициативы
-    hitdice: '#FFD166', // Золотистый для костей хитов
-    states: '#F0F0F0', // Белый для состояний
-  };
+const CombatTab = ({ formData, handleChange, removeAttack, selectedShape }) => {
+  console.log(`[CombatTab] Рендер компонента. formData:`, formData);
 
-  // Стиль для панелей
-  const panelStyle = {
-    background: colors.panel,
-    borderRadius: '0',
-    border: `3px solid ${colors.outline}`,
-    position: 'relative',
-    overflow: 'hidden',
-    padding: '1rem',
-    fontFamily: "'DotGothic16', sans-serif",
-    boxShadow: '0 4px 10px rgba(0, 0, 0, 0.8)',
-    marginBottom: '1rem',
-  };
-
-  // Стиль для заголовков секций
-  const sectionTitleStyle = {
-    color: colors.text,
-    fontSize: '1.3rem',
-    fontWeight: 700,
-    letterSpacing: '1px',
-    borderBottom: `2px solid ${colors.accent}`,
-    paddingBottom: '0.5rem',
-    marginBottom: '1rem',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    fontFamily: "'DotGothic16', sans-serif",
-    textTransform: 'uppercase',
-    textShadow: `0 0 5px ${colors.accent}`,
-  };
-
-  // Стиль для кнопок
-  const buttonStyle = (color) => ({
-    background: 'transparent',
-    border: `2px solid ${color}`,
-    color: color,
-    borderRadius: '0',
-    padding: '0.4rem 0.8rem',
-    transition: 'all 0.3s ease',
-    fontFamily: "'VT323', monospace",
-    fontSize: '1rem',
-    fontWeight: 500,
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.3rem',
-    letterSpacing: '1px',
-    '&:hover': {
-      background: color,
-      color: colors.background,
-    },
+  // Состояния для управления UI
+  const [rolledInitiative, setRolledInitiative] = useState(null);
+  const [hitDiceResult, setHitDiceResult] = useState(null);
+  const [diceRolls, setDiceRolls] = useState([]);
+  const [newState, setNewState] = useState('');
+  const [showAttackPicker, setShowAttackPicker] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({
+    health: true,
+    defense: true,
+    attacks: true,
+    initiative: true,
+    states: true,
   });
+  const prevHP = useRef(formData.current_hp);
+  const [attacks, setAttacks] = useState([]);
+  const [playerAttacks, setPlayerAttacks] = useState([]);
+  const currentProfileId = formData.owner;
 
-  // Стиль для инпутов
-  const inputStyle = {
-    background: 'rgba(0, 0, 0, 0.3)',
-    border: `2px solid ${colors.outline}`,
-    color: colors.text,
-    width: '100%',
-    padding: '0.5rem',
-    borderRadius: '0',
-    fontFamily: "'VT323', monospace",
-    fontSize: '1rem',
-    letterSpacing: '1px',
+  // Анимационные варианты
+  const popupVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+    exit: { opacity: 0, y: -20, transition: { duration: 0.2 } },
   };
 
-  // Функция для генерации SVG волн
-  const wavePattern = (color) => (
-    <div
-      style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: '12px',
-        background: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z' opacity='.25' fill='${encodeURIComponent(color)}'%3E%3C/path%3E%3Cpath d='M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z' opacity='.5' fill='${encodeURIComponent(color)}'%3E%3C/path%3E%3Cpath d='M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z' fill='${encodeURIComponent(color)}'%3E%3C/path%3E%3C/svg%3E")`,
-        backgroundSize: 'cover',
-        opacity: 0.7,
-        zIndex: 1,
-      }}
-    ></div>
+  const sectionVariants = {
+    hidden: { opacity: 0, height: 0 },
+    visible: {
+      opacity: 1,
+      height: 'auto',
+      transition: { duration: 0.3, ease: 'easeInOut' },
+    },
+    exit: {
+      opacity: 0,
+      height: 0,
+      transition: { duration: 0.2, ease: 'easeInOut' },
+    },
+  };
+
+  // Добавление атаки
+  const addAttack = () => {
+    console.log(`[addAttack] Открытие пикера атак`);
+    setShowAttackPicker(true);
+  };
+
+  // Использование ячейки заклинаний
+  const handleUseSlot = (index) => {
+    console.log(`[handleUseSlot] Использование ячейки заклинаний #${index}`);
+
+    if (formData.spell_slots_used < formData.spell_slots_total) {
+      handleChange('spell_slots_used', formData.spell_slots_used + 1);
+    } else {
+      console.log(`[handleUseSlot] Нет доступных ячеек заклинаний`);
+    }
+  };
+
+  // Сброс ячеек заклинаний
+  const handleResetSlots = () => {
+    console.log(`[handleResetSlots] Сброс ячеек заклинаний`);
+    handleChange('spell_slots_used', 0);
+  };
+
+  // Загрузка атак игрока
+  useEffect(() => {
+    console.log(
+      `[useEffect] Загрузка атак игрока. profileId: ${currentProfileId}`
+    );
+
+    if (!currentProfileId) {
+      console.log(`[useEffect] ID профиля не указан, пропуск загрузки атак`);
+      return;
+    }
+
+    const fetchAttacks = async () => {
+      try {
+        console.log(
+          `[fetchAttacks] Запрос атак для профиля ${currentProfileId}`
+        );
+        const res = await GetPlayerAttacks(currentProfileId);
+
+        if (Array.isArray(res.data)) {
+          console.log(`[fetchAttacks] Получено ${res.data.length} атак`);
+          setPlayerAttacks(res.data);
+        } else {
+          console.warn(
+            `[fetchAttacks] Получены некорректные данные:`,
+            res.data
+          );
+          setPlayerAttacks([]);
+        }
+      } catch (error) {
+        console.error(`[fetchAttacks] Ошибка загрузки атак:`, error);
+        setPlayerAttacks([]);
+      }
+    };
+
+    fetchAttacks();
+  }, [currentProfileId]);
+
+  // Отслеживание изменения HP
+  useEffect(() => {
+    console.log(`[useEffect] Отслеживание изменения HP`);
+
+    if (prevHP.current !== formData.current_hp) {
+      const hpChange = formData.current_hp - prevHP.current;
+      prevHP.current = formData.current_hp;
+
+      if (Math.abs(hpChange) > 0) {
+        console.log(`[useEffect] Изменение HP: ${hpChange}`);
+
+        setHitDiceResult({
+          roll: 0,
+          mod: hpChange,
+          total: hpChange > 0 ? `+${hpChange} HP` : `${hpChange} HP`,
+        });
+
+        setTimeout(() => {
+          console.log(`[useEffect] Скрытие результата изменения HP`);
+          setHitDiceResult(null);
+        }, 2500);
+      }
+    }
+  }, [formData.current_hp]);
+
+  // Функции для бросков
+  const rollInitiative = () => {
+    console.log(`[rollInitiative] Бросок инициативы`);
+
+    const d20 = Math.floor(Math.random() * 20) + 1;
+    const dexMod = formData.initiative || 0;
+    const total = d20 + dexMod;
+
+    console.log(
+      `[rollInitiative] Результат: d20=${d20}, мод=${dexMod}, итог=${total}`
+    );
+    return { roll: d20, mod: dexMod, total };
+  };
+
+  const handleInitiativeRoll = () => {
+    console.log(`[handleInitiativeRoll] Запуск броска инициативы`);
+    const result = rollInitiative();
+    setRolledInitiative(result);
+
+    setTimeout(() => {
+      console.log(`[handleInitiativeRoll] Скрытие результата`);
+      setRolledInitiative(null);
+    }, 3500);
+  };
+
+  const rollHitDice = () => {
+    console.log(`[rollHitDice] Бросок кости хитов`);
+
+    const [_, dieStr] = (formData.hit_dice || '1d10').split('d');
+    const die = parseInt(dieStr) || 10;
+    const conMod = parseInt(formData.con_mod) || 0;
+    const roll = Math.floor(Math.random() * die) + 1;
+
+    console.log(
+      `[rollHitDice] Результат: d${die}=${roll}, мод=${conMod}, итог=${roll + conMod}`
+    );
+    return { roll, mod: conMod, total: roll + conMod };
+  };
+
+  const handleUseHitDice = () => {
+    console.log(`[handleUseHitDice] Использование кости хитов`);
+
+    const result = rollHitDice();
+    const max = parseInt(formData.max_hp) || 0;
+    const current = parseInt(formData.current_hp) || 0;
+    const healing = result.total;
+    const newHp = Math.min(current + healing, max);
+
+    console.log(`[handleUseHitDice] Лечение: ${healing}, новое HP: ${newHp}`);
+
+    handleChange('current_hp', newHp);
+    setHitDiceResult(result);
+
+    setTimeout(() => {
+      console.log(`[handleUseHitDice] Скрытие результата`);
+      setHitDiceResult(null);
+    }, 3500);
+  };
+
+  const handleRest = () => {
+    console.log(`[handleRest] Полное восстановление HP`);
+
+    const full = parseInt(formData.max_hp) || 0;
+    handleChange('current_hp', full);
+
+    setHitDiceResult({
+      roll: 0,
+      mod: 0,
+      total: 'Все HP восстановлены',
+    });
+
+    setTimeout(() => {
+      console.log(`[handleRest] Скрытие результата`);
+      setHitDiceResult(null);
+    }, 3000);
+  };
+
+  const handleDiceClick = (die) => {
+    console.log(`[handleDiceClick] Бросок кости: ${die}`);
+
+    const dieValue = parseInt(die.slice(1));
+    const roll = Math.floor(Math.random() * dieValue) + 1;
+    const newRoll = {
+      id: Date.now(),
+      die,
+      result: roll,
+    };
+
+    console.log(`[handleDiceClick] Результат: ${roll}`);
+
+    setDiceRolls((prev) => [...prev, newRoll]);
+
+    setTimeout(() => {
+      console.log(`[handleDiceClick] Удаление результата броска ${die}`);
+      setDiceRolls((prev) => prev.filter((r) => r.id !== newRoll.id));
+    }, 3500);
+  };
+
+  const rollDiceMacro = () => {
+    console.log(`[rollDiceMacro] Бросок макроса: ${formData.dice_macro}`);
+
+    if (!formData.dice_macro) {
+      console.log(`[rollDiceMacro] Макрос не задан, бросок d20`);
+      handleDiceClick('d20');
+      return;
+    }
+
+    const macro = formData.dice_macro.toLowerCase();
+    const match = macro.match(/(\d*)d(\d+)([+-]\d+)?/);
+
+    if (!match) {
+      console.warn(`[rollDiceMacro] Некорректный макрос: ${macro}`);
+      handleDiceClick('d20');
+      return;
+    }
+
+    const count = parseInt(match[1] || '1');
+    const die = parseInt(match[2]);
+    const mod = match[3] ? parseInt(match[3]) : 0;
+
+    let total = 0;
+    const rolls = [];
+
+    for (let i = 0; i < count; i++) {
+      const roll = Math.floor(Math.random() * die) + 1;
+      rolls.push(roll);
+      total += roll;
+    }
+
+    total += mod;
+
+    const resultText = `${count > 1 ? `${rolls.join(' + ')} ` : ''}${mod ? `+ ${mod} = ` : ''}${total}`;
+
+    const newRoll = {
+      id: Date.now(),
+      die: macro,
+      result: resultText,
+    };
+
+    console.log(`[rollDiceMacro] Результат: ${resultText}`);
+
+    setDiceRolls((prev) => [...prev, newRoll]);
+
+    setTimeout(() => {
+      console.log(`[rollDiceMacro] Удаление результата макроса`);
+      setDiceRolls((prev) => prev.filter((r) => r.id !== newRoll.id));
+    }, 4500);
+  };
+
+  // Функции для управления состояниями
+  const addCustomState = () => {
+    console.log(`[addCustomState] Добавление состояния: ${newState}`);
+
+    if (newState.trim()) {
+      const states = formData.states || [];
+      const newStates = [...states, newState.trim()];
+      handleChange('states', newStates);
+      setNewState('');
+    }
+  };
+
+  const toggleState = (state) => {
+    console.log(`[toggleState] Переключение состояния: ${state}`);
+
+    const states = formData.states || [];
+    const newStates = states.includes(state)
+      ? states.filter((s) => s !== state)
+      : [...states, state];
+
+    handleChange('states', newStates);
+  };
+
+  // Функции для управления секциями
+  const toggleSection = (section) => {
+    console.log(`[toggleSection] Переключение секции: ${section}`);
+
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
+  // Расчет процента HP для прогресс бара
+  const hpPercent = Math.max(
+    0,
+    Math.min(100, ((formData.current_hp || 0) / (formData.max_hp || 1)) * 100)
   );
 
-  // Маски для декоративных элементов
-  const maskElements = [
-    { top: '10%', left: '5%', size: '40px', rotate: '-15deg' },
-    { top: '25%', right: '8%', size: '30px', rotate: '10deg' },
-    { bottom: '15%', left: '12%', size: '35px', rotate: '5deg' },
-    { bottom: '30%', right: '15%', size: '30px', rotate: '-8deg' },
-  ];
+  const expForNextLevel = (level) => level * 100;
+
+  // Функция расчёта прогресса
+  const calculateProgress = (experience, level) => {
+    const previousLevelExp = expForNextLevel(level - 1);
+    const nextLevelExp = expForNextLevel(level);
+    const currentExp = experience - previousLevelExp;
+    const neededExp = nextLevelExp - previousLevelExp;
+    return Math.min((currentExp / neededExp) * 100, 100);
+  };
+
+  const getDamageTypeIcon = (damageType) => {
+    console.log(
+      `[getDamageTypeIcon] Получение иконки для типа урона: ${damageType}`
+    );
+
+    if (!damageType) return <FaCrosshairs className="damage-icon" />;
+
+    const lowerType = damageType.toLowerCase();
+
+    if (lowerType.includes('огн'))
+      return <FaFire className="damage-icon fire" />;
+    if (lowerType.includes('холод'))
+      return <FaSnowflake className="damage-icon cold" />;
+    if (lowerType.includes('электр'))
+      return <FaBolt className="damage-icon lightning" />;
+    if (lowerType.includes('некро') || lowerType.includes('ядовит'))
+      return <FaSkull className="damage-icon poison" />;
+
+    return <FaCrosshairs className="damage-icon" />;
+  };
+
+  // Обработчик выбора атаки/заклинания
+  const handleSelectAttack = (selectedAttack) => {
+    console.log(
+      `[handleSelectAttack] Выбрана атака/заклинание:`,
+      selectedAttack
+    );
+
+    if (selectedAttack.source === 'attack') {
+      const updatedAttacks = [...(formData.attacks || []), selectedAttack];
+      handleChange('attacks', updatedAttacks);
+    } else if (selectedAttack.source === 'spell') {
+      const updatedSpells = [...(formData.spells || []), selectedAttack];
+      handleChange('spells', updatedSpells);
+    }
+
+    setShowAttackPicker(false);
+  };
+
+  // Обработчик удаления атаки/заклинания
+  const handleRemoveAttack = (item) => {
+    console.log(`[handleRemoveAttack] Удаление:`, item);
+
+    if (item.source === 'attack') {
+      const updatedAttacks = formData.attacks.filter((a) => a.id !== item.id);
+      handleChange('attacks', updatedAttacks);
+    } else if (item.source === 'spell') {
+      const updatedSpells = formData.spells.filter((s) => s.id !== item.id);
+      handleChange('spells', updatedSpells);
+    }
+  };
 
   return (
-    <div
-      className="combat-tab"
-      style={{
-        fontFamily: "'VT323', monospace",
-        background: colors.background,
-        padding: '1rem',
-        position: 'relative',
-        minHeight: '100vh',
-        overflow: 'hidden',
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20,20 Q40,5 60,20 T100,20 T140,20 T180,20' stroke='%232B3A67' stroke-width='0.3' fill='none' opacity='0.05'/%3E%3C/svg%3E")`,
-      }}
-    >
-      {/* Декоративные маски */}
-      {maskElements.map((mask, idx) => (
-        <div
-          key={idx}
-          style={{
-            position: 'absolute',
-            top: mask.top,
-            left: mask.left,
-            right: mask.right,
-            width: mask.size,
-            height: mask.size,
-            backgroundImage:
-              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50,15 C60,5 80,5 85,15 C95,25 95,40 85,50 C95,60 95,75 85,85 C75,95 60,95 50,85 C40,95 25,95 15,85 C5,75 5,60 15,50 C5,40 5,25 15,15 C25,5 40,5 50,15 Z' fill='none' stroke='%232B3A67' stroke-width='1.5'/%3E%3C/svg%3E\")",
-            backgroundSize: 'contain',
-            backgroundRepeat: 'no-repeat',
-            opacity: 0.15,
-            transform: `rotate(${mask.rotate})`,
-            zIndex: 0,
-          }}
-        ></div>
-      ))}
-      {/* Тень храма */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '5%',
-          right: '5%',
-          width: '120px',
-          height: '120px',
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M20,80 L30,60 L40,80 L50,50 L60,80 L70,40 L80,80 L90,20 L80,80 L70,40 L60,80 L50,50 L40,80 L30,60 L20,80 Z' fill='%232B3A67' opacity='0.1'/%3E%3C/svg%3E\")",
-          backgroundSize: 'contain',
-          backgroundRepeat: 'no-repeat',
-          opacity: 0.1,
-          zIndex: 0,
-        }}
-      ></div>
-
-      {/* Анимированный шум */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundImage:
-            'url("https://www.transparenttextures.com/patterns/carbon-fibre.png")',
-          opacity: 0.03,
-          animation: 'grain 8s steps(10) infinite',
-          zIndex: 1,
-          pointerEvents: 'none',
-        }}
-      ></div>
-
-      {/* Декоративный иероглиф */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          fontSize: '12rem',
-          fontWeight: 900,
-          color: 'rgba(43, 58, 103, 0.05)',
-          fontFamily: "'Noto Serif JP', serif",
-          zIndex: 0,
-          pointerEvents: 'none',
-          userSelect: 'none',
-          textShadow: '0 0 10px rgba(255, 107, 107, 0.1)',
-        }}
-      >
-        武
-      </div>
-
-      <Row className="g-3">
+    <div className="combat-tab">
+      <Row className="g-4">
         {/* ========== ЗДОРОВЬЕ ========== */}
         <Col md={6}>
-          <div className="panel" style={panelStyle}>
-            {wavePattern(colors.health)}
-
-            <div style={sectionTitleStyle}>
-              <HeartPulse
-                style={{ color: colors.accent, fontSize: '1.2rem' }}
-              />{' '}
-              健康
-            </div>
-
+          <div className="panel health-panel">
             <div
-              className="hp-display mb-3"
-              style={{ position: 'relative', textAlign: 'center' }}
+              className="section-title expandable"
+              onClick={() => toggleSection('health')}
             >
-              <div
-                className="hp-numbers"
-                style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  zIndex: 2,
-                  fontWeight: 700,
-                  fontSize: '1.4rem',
-                  color: colors.text,
-                  fontFamily: "'VT323', monospace",
-                  textShadow: `0 0 5px ${colors.accent}`,
-                  letterSpacing: '1px',
-                }}
-              >
-                {formData.current_hp} / {formData.max_hp}
+              <div className="d-flex align-items-center">
+                <HeartPulse className="health-icon" />
+                <span>Здоровье</span>
               </div>
-
-              <div
-                className="hp-bar"
-                style={{
-                  height: '35px',
-                  background: `linear-gradient(90deg, ${colors.health} ${(formData.current_hp / formData.max_hp) * 100}%, rgba(194, 69, 69, 0.1) 0%)`,
-                  borderRadius: '0',
-                  border: '2px solid #2B3A67',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  boxShadow: `0 0 8px ${colors.health}80`,
-                  animation: 'pulse 2s infinite alternate',
-                }}
-              >
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='20' height='20' fill='none' stroke='rgba(255,255,255,0.1)' stroke-width='0.3'/%3E%3C/svg%3E")`,
-                    opacity: 0.2,
-                  }}
-                ></div>
-              </div>
+              {expandedSections.health ? <ArrowUp /> : <ArrowDown />}
             </div>
 
-            <Row className="g-2 align-items-end">
-              <Col>
-                <label
-                  className="mb-1 d-block"
-                  style={{
-                    color: colors.text,
-                    fontWeight: 500,
-                    fontSize: '0.9rem',
-                  }}
+            <AnimatePresence>
+              {expandedSections.health && (
+                <motion.div
+                  variants={sectionVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
                 >
-                  最大HP
-                </label>
-                <input
-                  type="number"
-                  value={formData.max_hp}
-                  onChange={(e) => handleChange('max_hp', +e.target.value)}
-                  style={{
-                    ...inputStyle,
-                    border: `2px solid ${colors.outline}`,
-                    fontSize: '1.1rem',
-                    padding: '0.4rem',
-                  }}
-                />
-              </Col>
-              <Col>
-                <label
-                  className="mb-1 d-block"
-                  style={{
-                    color: colors.text,
-                    fontWeight: 500,
-                    fontSize: '0.9rem',
-                  }}
-                >
-                  現在のHP
-                </label>
-                <input
-                  type="number"
-                  value={formData.current_hp}
-                  onChange={(e) => handleChange('current_hp', +e.target.value)}
-                  style={{
-                    ...inputStyle,
-                    border: `2px solid ${colors.outline}`,
-                    fontSize: '1.1rem',
-                    padding: '0.4rem',
-                  }}
-                />
-              </Col>
-              <Col xs="auto">
-                <OverlayTrigger
-                  placement="top"
-                  overlay={
-                    <Tooltip>健康を回復 (Восстановить здоровье)</Tooltip>
-                  }
-                >
-                  <button
-                    style={{
-                      ...buttonStyle(colors.accent),
-                      padding: '0.5rem 0.8rem',
-                      border: `2px solid ${colors.accent}`,
-                      fontSize: '1rem',
-                      height: '100%',
-                    }}
-                    onClick={() => handleChange('current_hp', formData.max_hp)}
-                  >
-                    <ArrowRepeat
-                      style={{ marginRight: '0.3rem', fontSize: '0.9rem' }}
-                    />{' '}
-                    回復
-                  </button>
-                </OverlayTrigger>
-              </Col>
-            </Row>
+                  <div className="hp-display">
+                    <div className="hp-numbers">
+                      <span className="current-hp">
+                        {formData.current_hp || 0}
+                      </span>
+                      <span className="max-hp">/ {formData.max_hp || 0}</span>
+                      {formData.temp_hp > 0 && (
+                        <span className="temp-hp">
+                          +{formData.temp_hp || 0} временных
+                        </span>
+                      )}
+                    </div>
+                    <div className="hp-bar">
+                      <div
+                        className="hp-bar-fill"
+                        style={{ width: `${hpPercent}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="level-section">
+                    <span className="level-label">Уровень:</span>
+                    <span className="level-value">{formData.level || 1}</span>
+                    <div className="level-bar">
+                      <div
+                        className="level-bar-fill"
+                        style={{
+                          width: `${calculateProgress(formData.experience || 0, formData.level || 1)}%`,
+                        }}
+                      ></div>
+                    </div>
+                    <span className="level-exp">
+                      {formData.experience || 0} /{' '}
+                      {expForNextLevel(formData.level || 1)} XP
+                    </span>
+                  </div>
+                  <Row className="g-3 align-items-end mt-3">
+                    <Col>
+                      <label className="mb-2 d-block input-label">
+                        Макс. HP
+                      </label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={formData.max_hp ?? ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const parsed = val === '' ? null : parseInt(val);
+                          handleChange('max_hp', parsed);
+                        }}
+                        className="form-input"
+                      />
+                    </Col>
+                    <Col>
+                      <label className="mb-2 d-block input-label">
+                        Текущее HP
+                      </label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={formData.current_hp ?? ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const parsed = val === '' ? null : parseInt(val);
+                          handleChange('current_hp', parsed);
+                        }}
+                        className="form-input"
+                      />
+                    </Col>
+                    <Col xs="auto">
+                      <OverlayTrigger
+                        placement="top"
+                        overlay={<Tooltip>Временные HP</Tooltip>}
+                      >
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={formData.temp_hp ?? ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const parsed = val === '' ? null : parseInt(val);
+                            handleChange('temp_hp', parsed);
+                          }}
+                          className="form-input temp-hp-input"
+                          placeholder="Врем."
+                        />
+                      </OverlayTrigger>
+                    </Col>
+                    <Col xs="auto">
+                      <OverlayTrigger
+                        placement="top"
+                        overlay={<Tooltip>Восстановить здоровье</Tooltip>}
+                      >
+                        <button
+                          className="restore-button"
+                          onClick={() =>
+                            handleChange('current_hp', formData.max_hp)
+                          }
+                        >
+                          <ArrowRepeat />
+                        </button>
+                      </OverlayTrigger>
+                    </Col>
+                  </Row>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </Col>
+
+        {/* ========== ЯЧЕЙКИ ЗАКЛИНАНИЙ ========== */}
+        <div className="panel spell-slots-panel">
+          <div className="section-title">Ячейки заклинаний</div>
+          <div className="spell-slot-row">
+            <span className="spell-slot-count">
+              {formData.spell_slots_used} / {formData.spell_slots_total}
+            </span>
+            <div className="spell-slot-boxes">
+              {[...Array(formData.spell_slots_total)].map((_, i) => (
+                <div
+                  key={i}
+                  className={`spell-slot-box ${i < formData.spell_slots_used ? 'used' : ''}`}
+                  onClick={() => handleUseSlot(i)}
+                ></div>
+              ))}
+            </div>
+            <button
+              className="reset-slot-button"
+              onClick={handleResetSlots}
+              title="Восстановить ячейки"
+            >
+              <ArrowRepeat />
+            </button>
+          </div>
+        </div>
 
         {/* ========== ЗАЩИТА ========== */}
         <Col md={6}>
-          <div className="panel" style={panelStyle}>
-            {wavePattern(colors.defense)}
-
-            <div style={sectionTitleStyle}>
-              <Shield style={{ color: colors.accent, fontSize: '1.2rem' }} />{' '}
-              防御
-            </div>
-
-            <Row className="g-2 mb-3">
-              <Col md={6}>
-                <div
-                  className="stat-card"
-                  style={{
-                    background: 'rgba(0, 0, 0, 0.3)',
-                    border: `2px solid ${colors.outline}`,
-                    borderRadius: '0',
-                    padding: '0.8rem',
-                    textAlign: 'center',
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: '2rem',
-                      fontWeight: 700,
-                      color: colors.defense,
-                      fontFamily: "'VT323', monospace",
-                      textShadow: `0 0 5px ${colors.defense}80`,
-                      letterSpacing: '1px',
-                    }}
-                  >
-                    {formData.armor_class || 0}
-                  </div>
-                  <div
-                    style={{
-                      color: colors.text,
-                      fontSize: '0.9rem',
-                      fontWeight: 500,
-                      marginTop: '0.3rem',
-                    }}
-                  >
-                    鎧のクラス
-                  </div>
-                </div>
-              </Col>
-              <Col md={6}>
-                <div
-                  className="stat-card"
-                  style={{
-                    background: 'rgba(0, 0, 0, 0.3)',
-                    border: `2px solid ${colors.outline}`,
-                    borderRadius: '0',
-                    padding: '0.8rem',
-                    textAlign: 'center',
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: '2rem',
-                      fontWeight: 700,
-                      color: colors.initiative,
-                      fontFamily: "'VT323', monospace",
-                      textShadow: `0 0 5px ${colors.initiative}80`,
-                      letterSpacing: '1px',
-                    }}
-                  >
-                    {formData.speed || 0}
-                  </div>
-                  <div
-                    style={{
-                      color: colors.text,
-                      fontSize: '0.9rem',
-                      fontWeight: 500,
-                      marginTop: '0.3rem',
-                    }}
-                  >
-                    速度
-                  </div>
-                </div>
-              </Col>
-            </Row>
-
-            <div className="saving-throws">
-              <div
-                className="mb-2"
-                style={{
-                  color: colors.text,
-                  fontWeight: 500,
-                  fontSize: '1rem',
-                  textAlign: 'center',
-                  textShadow: `0 0 3px ${colors.accent}`,
-                }}
-              >
-                セービングスロー
-              </div>
-              <div className="d-flex flex-wrap gap-1">
-                {['str', 'dex', 'con', 'int', 'wis', 'cha'].map((ability) => (
-                  <div
-                    key={ability}
-                    className="saving-throw"
-                    style={{
-                      background: 'rgba(0, 0, 0, 0.3)',
-                      border: `1px solid ${colors.outline}`,
-                      borderRadius: '0',
-                      padding: '0.4rem 0.3rem',
-                      textAlign: 'center',
-                      flex: '1',
-                      minWidth: '70px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        textTransform: 'uppercase',
-                        fontSize: '0.8rem',
-                        color: colors.text,
-                        fontWeight: 700,
-                        letterSpacing: '1px',
-                        marginBottom: '0.2rem',
-                      }}
-                    >
-                      {ability}
-                    </div>
-                    <div
-                      style={{
-                        fontWeight: 700,
-                        color: colors.text,
-                        fontSize: '1.1rem',
-                        fontFamily: "'VT323', monospace",
-                      }}
-                    >
-                      +{formData[`${ability}_save`] || 0}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </Col>
-
-        {/* ========== АТАКИ ========== */}
-        <Col md={12}>
-          <div className="panel" style={panelStyle}>
-            {wavePattern(colors.attacks)}
-
+          <div className="panel defense-panel">
             <div
-              className="d-flex align-items-center mb-3"
-              style={sectionTitleStyle}
+              className="section-title expandable"
+              onClick={() => toggleSection('defense')}
             >
-              <LightningCharge
-                style={{ color: colors.accent, fontSize: '1.2rem' }}
-              />{' '}
-              攻撃
-              <button
-                style={{
-                  ...buttonStyle(colors.accent),
-                  marginLeft: 'auto',
-                  border: `2px solid ${colors.accent}`,
-                  padding: '0.4rem 0.8rem',
-                  fontSize: '1rem',
-                }}
-                onClick={addAttack}
-              >
-                <Plus style={{ marginRight: '0.3rem', fontSize: '0.9rem' }} />{' '}
-                追加
-              </button>
+              <div className="d-flex align-items-center">
+                <Shield className="defense-icon" />
+                <span>Защита</span>
+              </div>
+              {expandedSections.defense ? <ArrowUp /> : <ArrowDown />}
             </div>
 
-            <div
-              className="attack-list"
-              style={{
-                maxHeight: '220px',
-                overflowY: 'auto',
-                padding: '0.3rem',
-              }}
-            >
-              {(formData.attacks || []).map((attack, idx) => (
-                <div
-                  key={idx}
-                  className="attack-item mb-2"
-                  style={{
-                    background: 'rgba(0, 0, 0, 0.3)',
-                    border: `2px solid ${colors.outline}`,
-                    borderRadius: '0',
-                    padding: '0.8rem',
-                    position: 'relative',
-                  }}
+            <AnimatePresence>
+              {expandedSections.defense && (
+                <motion.div
+                  variants={sectionVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
                 >
-                  <Row className="g-2 align-items-center">
-                    <Col md={4}>
+                  <Row className="g-3 mb-4">
+                    <Col md={6}>
+                      <label className="mb-1 text-light">Класс брони</label>
                       <input
-                        placeholder="攻撃名"
-                        value={attack.name}
-                        onChange={(e) =>
-                          handleChange('attacks', e.target.value, idx, 'name')
-                        }
-                        style={{
-                          ...inputStyle,
-                          fontWeight: 700,
-                          fontSize: '1.1rem',
-                          border: `2px solid ${colors.outline}`,
-                          padding: '0.4rem',
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        className="form-input"
+                        value={formData.armor_class ?? ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const parsed = val === '' ? null : parseInt(val);
+                          handleChange('armor_class', parsed);
                         }}
                       />
                     </Col>
-                    <Col md={3}>
-                      <div className="d-flex align-items-center">
-                        <span
-                          className="me-1"
-                          style={{
-                            color: colors.text,
-                            fontSize: '0.9rem',
-                            fontWeight: 500,
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          ボーナス:
-                        </span>
-                        <input
-                          type="number"
-                          placeholder="+0"
-                          value={attack.bonus}
-                          onChange={(e) =>
-                            handleChange(
-                              'attacks',
-                              +e.target.value,
-                              idx,
-                              'bonus'
-                            )
-                          }
-                          style={{
-                            ...inputStyle,
-                            width: '70px',
-                            textAlign: 'center',
-                            border: `2px solid ${colors.outline}`,
-                            fontSize: '1.1rem',
-                            padding: '0.4rem',
-                          }}
-                        />
-                      </div>
-                    </Col>
-                    <Col md={4}>
-                      <div className="d-flex align-items-center">
-                        <span
-                          className="me-1"
-                          style={{
-                            color: colors.text,
-                            fontSize: '0.9rem',
-                            fontWeight: 500,
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          ダメージ:
-                        </span>
-                        <input
-                          placeholder="1d8+2"
-                          value={attack.damage}
-                          onChange={(e) =>
-                            handleChange(
-                              'attacks',
-                              e.target.value,
-                              idx,
-                              'damage'
-                            )
-                          }
-                          style={{
-                            ...inputStyle,
-                            border: `2px solid ${colors.outline}`,
-                            fontSize: '1.1rem',
-                            padding: '0.4rem',
-                          }}
-                        />
-                      </div>
-                    </Col>
-                    <Col md={1} className="text-end">
-                      <button
-                        style={{
-                          ...buttonStyle(colors.accent),
-                          padding: '0.3rem',
-                          border: `2px solid ${colors.accent}`,
-                          fontSize: '1rem',
+                    <Col md={6}>
+                      <label className="mb-1 text-light">Скорость</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        className="form-input"
+                        value={formData.speed ?? ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const parsed = val === '' ? null : parseInt(val);
+                          handleChange('speed', parsed);
                         }}
-                        onClick={() => removeAttack(idx)}
-                      >
-                        <Dash />
-                      </button>
+                      />
                     </Col>
                   </Row>
-                  <textarea
-                    rows={1}
-                    placeholder="説明"
-                    value={attack.description || ''}
-                    className="mt-2"
-                    onChange={(e) =>
-                      handleChange(
-                        'attacks',
-                        e.target.value,
-                        idx,
-                        'description'
-                      )
-                    }
-                    style={{
-                      ...inputStyle,
-                      resize: 'vertical',
-                      minHeight: '50px',
-                      border: `2px solid ${colors.outline}`,
-                      fontSize: '0.9rem',
-                      padding: '0.4rem',
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </Col>
 
+        {/* ========== АТАКИ И ЗАКЛИНАНИЯ ========== */}
+        <div className="panel attacks-panel">
+          <div
+            className="section-title attacks-header expandable"
+            onClick={() => toggleSection('attacks')}
+          >
+            <div className="d-flex align-items-center">
+              <LightningCharge className="attacks-icon" />
+              <span>Атаки и заклинания</span>
+              <span className="badge attacks-count">
+                {(formData.attacks?.length || 0) +
+                  (formData.spells?.length || 0)}
+              </span>
+            </div>
+            <div className="d-flex align-items-center">
+              <button
+                className="add-attack-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addAttack();
+                }}
+              >
+                <Plus />
+                <span>Добавить</span>
+              </button>
+              {expandedSections.attacks ? <ArrowUp /> : <ArrowDown />}
+            </div>
+          </div>
+
+          {expandedSections.attacks && (
+            <div className="attacks-list">
+              {[...formData.attacks, ...formData.spells].length > 0 ? (
+                [
+                  ...formData.attacks.map((a) => ({ ...a, source: 'attack' })),
+                  ...formData.spells.map((s) => ({ ...s, source: 'spell' })),
+                ].map((item, index) => (
+                  <div key={index} className="attack-card compact">
+                    <div className="attack-icon">
+                      {getDamageTypeIcon(item.damageType)}
+                    </div>
+                    <div className="attack-info">
+                      <div className="attack-name">{item.name}</div>
+                      <div className="attack-stats">
+                        <span className="damage">{item.damageDice}</span>
+                        <span className="type">{item.damageType}</span>
+                        <span className="range">{item.range}</span>
+                      </div>
+                    </div>
+                    <div className="attack-tags">
+                      {item.source === 'attack' ? (
+                        <span className="badge bg-primary me-2">Атака</span>
+                      ) : (
+                        <span className="badge bg-info me-2">Заклинание</span>
+                      )}
+                    </div>
+                    <button
+                      className="delete-attack"
+                      onClick={() => handleRemoveAttack(item)}
+                    >
+                      <FaTrash />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="no-attacks">
+                  <p>Нет добавленных атак или заклинаний</p>
+                  <button className="btn-add-attack" onClick={addAttack}>
+                    <Plus size={16} />
+                    Добавить первую
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          <AttackPickerModal
+            show={showAttackPicker}
+            onClose={() => {
+              console.log(`[AttackPickerModal] Закрытие пикера атак`);
+              setShowAttackPicker(false);
+            }}
+            onSelect={handleSelectAttack}
+            profileId={currentProfileId}
+            attacks={playerAttacks}
+          />
+        </div>
+
         {/* ========== ИНИЦИАТИВА И КОСТИ ========== */}
         <Col md={8}>
-          <Row className="g-3">
+          <Row className="g-4">
             <Col md={6}>
-              <div className="panel h-100" style={panelStyle}>
-                {wavePattern(colors.initiative)}
-
-                <div style={sectionTitleStyle}>
-                  <Stopwatch
-                    style={{ color: colors.accent, fontSize: '1.2rem' }}
-                  />{' '}
-                  イニシアチブ
+              <div className="panel initiative-panel">
+                <div
+                  className="section-title expandable"
+                  onClick={() => toggleSection('initiative')}
+                >
+                  <div className="d-flex align-items-center">
+                    <Stopwatch className="initiative-icon" />
+                    <span>Инициатива</span>
+                  </div>
+                  {expandedSections.initiative ? <ArrowUp /> : <ArrowDown />}
                 </div>
 
-                <div className="text-center" style={{ marginTop: '0.5rem' }}>
-                  <div
-                    style={{
-                      fontSize: '3rem',
-                      fontWeight: 700,
-                      color: colors.initiative,
-                      lineHeight: 1,
-                      fontFamily: "'VT323', monospace",
-                      textShadow: `0 0 8px ${colors.initiative}80`,
-                      letterSpacing: '2px',
-                      animation: 'glitch 1s infinite',
-                    }}
-                  >
-                    {formData.initiative || 0}
-                  </div>
-                  <div
-                    style={{
-                      color: colors.text,
-                      fontSize: '1rem',
-                      fontWeight: 500,
-                      marginTop: '0.5rem',
-                    }}
-                  >
-                    修整子: {formData.dex_mod >= 0 ? '+' : ''}
-                    {formData.dex_mod || 0}
-                  </div>
-                </div>
+                <AnimatePresence>
+                  {expandedSections.initiative && (
+                    <motion.div
+                      variants={sectionVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                    >
+                      <div className="initiative-display">
+                        <div className="initiative-value">
+                          {formData.initiative >= 0 ? '+' : ''}
+                          {formData.initiative || 0}
+                        </div>
+                        <div className="initiative-modifier">
+                          Модификатор: {formData.initiative >= 0 ? '+' : ''}
+                          {formData.initiative || 0}
+                        </div>
+
+                        <button
+                          className="roll-initiative-button"
+                          onClick={handleInitiativeRoll}
+                          title="Бросить инициативу"
+                        >
+                          <Dice5 size={24} />
+                        </button>
+                      </div>
+
+                      <AnimatePresence>
+                        {rolledInitiative && (
+                          <motion.div
+                            className="roll-result-popup"
+                            variants={popupVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                          >
+                            🎲 {rolledInitiative.roll} +{' '}
+                            {formData.initiative || 0} ={' '}
+                            <strong>{rolledInitiative.total}</strong>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </Col>
-
             <Col md={6}>
-              <div className="panel h-100" style={panelStyle}>
-                {wavePattern(colors.hitdice)}
-
-                <div style={sectionTitleStyle}>
-                  <Dice5 style={{ color: colors.accent, fontSize: '1.2rem' }} />{' '}
-                  ヒットダイス
+              <div className="panel hitdice-panel">
+                <div className="section-title">
+                  <Dice5 className="hitdice-icon" />
+                  <span>Кости хитов</span>
                 </div>
 
-                <div className="text-center" style={{ marginTop: '0.5rem' }}>
-                  <div
-                    style={{
-                      fontSize: '2.2rem',
-                      fontWeight: 700,
-                      color: colors.hitdice,
-                      fontFamily: "'VT323', monospace",
-                      textShadow: `0 0 6px ${colors.hitdice}80`,
-                      letterSpacing: '1px',
-                    }}
-                  >
-                    {formData.hit_dice || '1d10'}
+                <div className="hitdice-display">
+                  <div className="hitdice-value">
+                    {formData.class_hit_dice || '1d10'}
                   </div>
 
-                  <div className="d-flex justify-content-center gap-2 mt-2">
+                  <div className="d-flex justify-content-center gap-3 mt-2">
                     <button
-                      style={{
-                        ...buttonStyle(colors.hitdice),
-                        border: `2px solid ${colors.hitdice}`,
-                        padding: '0.4rem 0.8rem',
-                        fontSize: '1rem',
-                      }}
+                      className="hitdice-button use"
+                      onClick={handleUseHitDice}
                     >
-                      使用
+                      <Dice5 /> Использовать
                     </button>
+
                     <button
-                      style={{
-                        ...buttonStyle(colors.hitdice),
-                        border: `2px solid ${colors.hitdice}`,
-                        padding: '0.4rem 0.8rem',
-                        fontSize: '1rem',
-                      }}
+                      className="hitdice-button rest"
+                      onClick={handleRest}
                     >
-                      休憩
+                      <span className="rest-icon">🛌</span> Отдых
                     </button>
                   </div>
+
+                  <AnimatePresence>
+                    {hitDiceResult && (
+                      <motion.div
+                        className="hitdice-popup"
+                        variants={popupVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                      >
+                        {typeof hitDiceResult.total === 'string' ? (
+                          <strong>{hitDiceResult.total}</strong>
+                        ) : (
+                          <>
+                            +{hitDiceResult.total} HP{' '}
+                            <span className="breakdown">
+                              ({hitDiceResult.roll} + {hitDiceResult.mod})
+                            </span>
+                          </>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
             </Col>
 
             <Col md={12}>
-              <div className="panel" style={panelStyle}>
-                {wavePattern(colors.initiative)}
-
-                <div style={sectionTitleStyle}>戦闘行動</div>
-
+              <div className="panel actions-panel">
+                <div className="section-title">Боевые действия</div>
                 <textarea
-                  rows={2}
+                  rows={3}
                   value={formData.combat_actions || ''}
                   onChange={(e) =>
                     handleChange('combat_actions', e.target.value)
                   }
-                  placeholder="特殊能力、呪文、戦術..."
-                  style={{
-                    ...inputStyle,
-                    minHeight: '80px',
-                    border: `2px solid ${colors.outline}`,
-                    fontSize: '1rem',
-                    padding: '0.5rem',
-                  }}
+                  placeholder="Особые способности, заклинания, тактика..."
+                  className="actions-textarea"
                 />
               </div>
             </Col>
@@ -783,177 +849,123 @@ const CombatTab = ({ formData, handleChange, addAttack, removeAttack }) => {
 
         {/* ========== СОСТОЯНИЯ И КОСТИ ========== */}
         <Col md={4}>
-          <div className="panel h-100" style={panelStyle}>
-            {wavePattern(colors.hitdice)}
-
-            <div style={sectionTitleStyle}>状態</div>
-
-            <div className="d-flex flex-wrap gap-2 mb-3">
-              {['祝福', '不可視', '狂戦士', '恐怖', '毒', '気絶'].map(
-                (state) => (
-                  <button
-                    key={state}
-                    style={{
-                      ...buttonStyle(colors.outline),
-                      borderRadius: '0',
-                      background: formData.states?.includes(state)
-                        ? `rgba(43, 58, 103, 0.3)`
-                        : 'transparent',
-                      border: formData.states?.includes(state)
-                        ? `2px solid ${colors.accent}`
-                        : `2px solid ${colors.outline}`,
-                      color: formData.states?.includes(state)
-                        ? colors.accent
-                        : colors.text,
-                      padding: '0.4rem 0.3rem',
-                      flex: '1 0 45%',
-                      fontSize: '0.9rem',
-                      textShadow: formData.states?.includes(state)
-                        ? `0 0 3px ${colors.accent}`
-                        : 'none',
-                    }}
-                    onClick={() => {
-                      const states = formData.states || [];
-                      const newStates = states.includes(state)
-                        ? states.filter((s) => s !== state)
-                        : [...states, state];
-                      handleChange('states', newStates);
-                    }}
-                  >
-                    {state}
-                  </button>
-                )
-              )}
-            </div>
-
-            <div style={sectionTitleStyle}>ダイス</div>
-
-            <div className="mb-3">
-              <input
-                type="text"
-                placeholder="1d20+5"
-                value={formData.dice_macro || ''}
-                onChange={(e) => handleChange('dice_macro', e.target.value)}
-                style={{
-                  ...inputStyle,
-                  marginBottom: '1rem',
-                  textAlign: 'center',
-                  fontWeight: 700,
-                  border: `2px solid ${colors.outline}`,
-                  fontSize: '1.1rem',
-                  padding: '0.5rem',
-                }}
-              />
-
-              <div className="d-flex flex-wrap gap-2 mb-3">
-                {['d20', 'd12', 'd10', 'd8', 'd6', 'd4'].map((die) => (
-                  <button
-                    key={die}
-                    style={{
-                      ...buttonStyle(colors.outline),
-                      flex: '1 0 28%',
-                      border: `2px solid ${colors.outline}`,
-                      padding: '0.5rem 0',
-                      fontSize: '1.1rem',
-                      fontWeight: 700,
-                      marginBottom: '0.3rem',
-                    }}
-                  >
-                    {die}
-                  </button>
-                ))}
+          <div className="panel states-panel">
+            <div
+              className="section-title expandable"
+              onClick={() => toggleSection('states')}
+            >
+              <div className="d-flex align-items-center">
+                <span>Состояния</span>
               </div>
+              {expandedSections.states ? <ArrowUp /> : <ArrowDown />}
             </div>
 
-            <div className="text-center">
-              <button
-                style={{
-                  background: 'transparent',
-                  border: `3px solid ${colors.accent}`,
-                  color: colors.accent,
-                  width: '100%',
-                  padding: '0.8rem',
-                  fontSize: '1.3rem',
-                  fontWeight: 700,
-                  fontFamily: "'DotGothic16', sans-serif",
-                  letterSpacing: '1px',
-                  textShadow: `0 0 6px ${colors.accent}`,
-                  animation: 'pulse 1.5s infinite',
-                }}
-              >
-                ダイスを振る
-              </button>
-            </div>
+            <AnimatePresence>
+              {expandedSections.states && (
+                <motion.div
+                  variants={sectionVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                >
+                  <div className="states-container">
+                    <div className="d-flex mb-2">
+                      <input
+                        type="text"
+                        value={newState}
+                        onChange={(e) => setNewState(e.target.value)}
+                        placeholder="Добавить состояние"
+                        className="form-control"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && newState.trim()) {
+                            e.preventDefault();
+                            addCustomState();
+                          }
+                        }}
+                      />
+                      <button
+                        className="btn btn-sm btn-primary ms-2"
+                        onClick={addCustomState}
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </div>
+
+                    <div className="states-grid">
+                      {(formData.states || []).map((state) => (
+                        <button
+                          key={state}
+                          className={`state-button ${formData.states?.includes(state) ? 'active' : ''}`}
+                          onClick={() => toggleState(state)}
+                        >
+                          {state}
+                          {formData.states?.includes(state) && (
+                            <Check className="state-check" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="section-title dice-section mt-4">Кости</div>
+                  <div className="dice-macro-container">
+                    <input
+                      type="text"
+                      placeholder="1d20+5"
+                      value={formData.dice_macro || ''}
+                      onChange={(e) =>
+                        handleChange('dice_macro', e.target.value)
+                      }
+                      className="dice-macro-input"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          rollDiceMacro();
+                        }
+                      }}
+                    />
+                    <button
+                      className="dice-macro-button"
+                      onClick={rollDiceMacro}
+                    >
+                      Бросить
+                    </button>
+                  </div>
+                  <div className="dice-buttons">
+                    {['d20', 'd12', 'd10', 'd8', 'd6', 'd4'].map((die) => (
+                      <button
+                        key={die}
+                        className="dice-button"
+                        onClick={() => handleDiceClick(die)}
+                        title={`Бросить ${die}`}
+                      >
+                        🎲 {die}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="dice-roll-popups">
+                    <AnimatePresence>
+                      {diceRolls.map(({ id, die, result }) => (
+                        <motion.div
+                          key={id}
+                          className="dice-roll-popup"
+                          variants={popupVariants}
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit"
+                        >
+                          🎲 {die}: <strong>{result}</strong>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </Col>
       </Row>
-
-      {/* CSS анимации */}
-      <style jsx>{`
-        @keyframes grain {
-          0%,
-          100% {
-            transform: translate(0, 0);
-          }
-          10% {
-            transform: translate(-5%, -10%);
-          }
-          20% {
-            transform: translate(-15%, 5%);
-          }
-          30% {
-            transform: translate(7%, -25%);
-          }
-          40% {
-            transform: translate(-5%, 25%);
-          }
-          50% {
-            transform: translate(-15%, 10%);
-          }
-          60% {
-            transform: translate(15%, 0%);
-          }
-          70% {
-            transform: translate(0%, 15%);
-          }
-          80% {
-            transform: translate(3%, -35%);
-          }
-          90% {
-            transform: translate(-10%, 10%);
-          }
-        }
-
-        @keyframes glitch {
-          0% {
-            text-shadow: 0 0 8px ${colors.initiative}80;
-          }
-          2% {
-            transform: translateX(2px) translateY(-1px);
-            text-shadow: 1px 1px 0 ${colors.accent};
-          }
-          4% {
-            transform: translateX(-2px) translateY(1px);
-            text-shadow: -1px -1px 0 ${colors.defense};
-          }
-          6% {
-            transform: translateX(0);
-            text-shadow: 0 0 8px ${colors.initiative}80;
-          }
-          100% {
-            text-shadow: 0 0 8px ${colors.initiative}80;
-          }
-        }
-
-        @keyframes pulse {
-          0% {
-            box-shadow: 0 0 3px ${colors.health}80;
-          }
-          100% {
-            box-shadow: 0 0 12px ${colors.health};
-          }
-        }
-      `}</style>
     </div>
   );
 };

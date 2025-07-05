@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 
 from maps.models import Shape
 class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='userprofile')
     bio = models.TextField(blank=True)
     avatar = models.ImageField(upload_to='avatar/', blank=True)
 

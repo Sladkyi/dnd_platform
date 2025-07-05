@@ -1,33 +1,36 @@
-/* Вкладки навигации */
+/* 🍎 Navigation Tabs — macOS 15+ glass style */
 .nav-tabs {
-    border-bottom: 2px solid var(--ui-border-primary);
-    margin-bottom: 20px;
-    background: var(--modal-pattern-jp),
-        linear-gradient(to right,
-            var(--global-bg-tertiary),
-            var(--global-bg-dark));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 24px;
+    background: rgba(44, 44, 46, 0.55);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-radius: 14px;
+    padding: 6px 12px;
+    display: flex;
+    gap: 6px;
 }
 
 .nav-tabs .nav-link {
-    color: var(--tab-inactive);
+    color: rgba(235, 235, 245, 0.6);
     background-color: transparent;
     border: none;
     padding: 10px 18px;
-    font-weight: 500;
+    border-radius: 12px;
     font-size: 15px;
-    transition: background 0.2s ease, color 0.2s ease;
+    font-weight: 500;
+    transition: all 0.25s ease;
 }
 
 .nav-tabs .nav-link:hover {
-    color: var(--tab-hover);
-    background-color: var(--tab-hover-bg);
-    border-radius: 6px 6px 0 0;
-    box-shadow: inset 0 -1px 0 var(--ui-border-primary);
+    background-color: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.95);
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .nav-tabs .nav-link.active {
-    color: var(--tab-hover);
-    background-color: var(--tab-active-bg);
-    border-radius: 8px 8px 0 0;
+    background-color: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 1);
     font-weight: 600;
-    box-shadow: inset 0 -2px 0 var(--ui-border-secondary); }
+    box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.25);
+}

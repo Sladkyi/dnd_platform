@@ -8,9 +8,9 @@ export const handleShapeDrag = async (updatedShape, setShapes) => {
     y: updatedShape.y,
     fill: updatedShape.fill || '#FFFFFF',
     type: updatedShape.type || 'circle',
-    // добавь другие поля при необходимости
   };
-  console.log(shapeDataToSend);
+
+  console.log('📦 Локально обновляем фигуру:', shapeDataToSend);
 
   setShapes((prev) =>
     prev.map((s) =>

@@ -11,12 +11,11 @@ const JoinSessionPage = () => {
   const [error, setError] = useState(null);
 
   const handleJoin = async (selectedShapeId) => {
+    console.log(selectedShapeId);
     try {
       const response = await axiosInstance.post(
-        `/maps/joinSessionWithShape/${sessionId}/`,
-        {
-          shape_id: selectedShapeId,
-        }
+        `/sessions/joinSessionWithShape/${sessionId}/`,
+        { shape_id: selectedShapeId }
       );
       console.log('Успешно присоединились:', response.data);
       navigate(`/edit-map/${response.data.map_id}`, {

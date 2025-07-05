@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './styles/CreateMap.css';
 import { useParams } from 'react-router-dom';
-
+import axiosInstance from '../axiosInstance';
+import { createMap } from '../services/MapService';
 const CreateMap = () => {
   const [mapName, setMapName] = useState('');
   const [mapImage, setMapImage] = useState(null);
@@ -18,12 +19,6 @@ const CreateMap = () => {
     setMapImage(event.target.files[0]);
   };
 
-  // Пример получения CSRF-токена (если нужно)
-  const getCSRFToken = () => {
-    const cookie = document.cookie.match(/csrftoken=([\w-]+)/);
-    return cookie ? cookie[1] : '';
-  };
-
   const handleSubmit = async () => {
     if (!mapImage || !mapName) {
       alert('Пожалуйста, введите название карты и загрузите изображение.');
@@ -33,30 +28,17 @@ const CreateMap = () => {
     const formData = new FormData();
     formData.append('full_card_map_image', mapImage);
     formData.append('title', mapName);
-    formData.append('user', id);
-    formData.append('description', 'Описание карты'); // Можешь сделать отдельное поле
+    formData.append('description', 'Описание карты');
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/maps/change/${id}/`,
-        {
-          method: 'POST',
-          headers: {
-            'X-CSRFToken': getCSRFToken(),
-          },
-          body: formData,
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Комната загружена:', data);
-        navigate('/maps'); // Переход после успешной загрузки
-      } else {
-        console.error('Ошибка сервера:', await response.text());
-      }
+      const response = await createMap(id, formData);
+      console.log('Карта создана:', response.data);
+      navigate('/maps');
     } catch (err) {
-      console.error('Ошибка при загрузке:', err);
+      console.error(
+        'Ошибка при создании карты:',
+        err.response?.data || err.message
+      );
     }
   };
 

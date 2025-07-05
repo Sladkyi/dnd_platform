@@ -1,58 +1,122 @@
-// ClassEditor.jsx — центральный редактор классов в GLORIOUS NOCTURNE
+// ClassEditor.jsx — редактор классов для GLORIOUS NOCTURNE
 import React, { useState, useEffect } from 'react';
 import './styles/ClassEditor.css';
+import { useParams } from 'react-router-dom';
+import {
+  GetPlayerClasses,
+  createClass,
+  updateClass,
+  deleteClass,
+} from '../services/MapService';
 
 const ClassEditor = () => {
-  const [classData, setClassData] = useState({
+  const { id: profileId } = useParams();
+  const abilities = [
+    'Сила',
+    'Ловкость',
+    'Телосложение',
+    'Интеллект',
+    'Мудрость',
+    'Харизма',
+  ];
+
+  const initialState = {
     name: '',
     hitDice: 'd8',
-    primaryStat: 'Интеллект',
-    description: '',
+    primaryStat: [],
     spellcastingAbility: '',
-    primaryAbilities: [],
-    proficiencies: '',
+    description: '',
     features: '',
-  });
+    proficiencies: '',
+  };
 
+  const [classData, setClassData] = useState(initialState);
   const [savedClasses, setSavedClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState(null);
 
   useEffect(() => {
-    const storedClasses = JSON.parse(localStorage.getItem('dnd-classes')) || [];
-    setSavedClasses(storedClasses);
-  }, []);
+    if (!profileId) return;
+    GetPlayerClasses(profileId)
+      .then((res) => setSavedClasses(res.data))
+      .catch((err) => console.error('Ошибка при загрузке классов:', err));
+  }, [profileId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setClassData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
-    if (!classData.name.trim()) return;
-    const updatedClasses = [...savedClasses, classData];
-    setSavedClasses(updatedClasses);
-    localStorage.setItem('dnd-classes', JSON.stringify(updatedClasses));
-    setClassData({
-      name: '',
-      hitDice: 'd8',
-      primaryStat: 'Интеллект',
-      description: '',
-      spellcastingAbility: '',
-      primaryAbilities: [],
-      proficiencies: '',
-      features: '',
+  // Обработчик для чекбоксов характеристик
+  const handleStatChange = (ability) => {
+    setClassData((prev) => {
+      const newStats = prev.primaryStat.includes(ability)
+        ? prev.primaryStat.filter((a) => a !== ability)
+        : [...prev.primaryStat, ability];
+
+      return { ...prev, primaryStat: newStats };
     });
   };
 
-  const handleDelete = (index) => {
-    const updatedClasses = savedClasses.filter((_, i) => i !== index);
-    setSavedClasses(updatedClasses);
-    localStorage.setItem('dnd-classes', JSON.stringify(updatedClasses));
-    if (selectedClass === index) setSelectedClass(null);
+  const handleCreate = async () => {
+    try {
+      const payload = {
+        ...classData,
+        primary_abilities: classData.primaryStat,
+        spellcasting_ability: classData.spellcastingAbility || null,
+      };
+      const response = await createClass(payload);
+      setSavedClasses((prev) => [...prev, response.data]);
+      setClassData(initialState);
+    } catch (err) {
+      console.error('Ошибка при создании класса:', err);
+    }
   };
 
-  const handleSelectClass = (index) => {
-    setSelectedClass(index === selectedClass ? null : index);
+  const handleUpdate = async (id) => {
+    try {
+      const payload = {
+        ...classData,
+        primary_abilities: classData.primaryStat,
+        spellcasting_ability: classData.spellcastingAbility || null,
+      };
+      const response = await updateClass(id, payload);
+      setSavedClasses((prev) =>
+        prev.map((cls) => (cls.id === id ? response.data : cls))
+      );
+      setSelectedClass(null);
+      setClassData(initialState);
+    } catch (err) {
+      console.error('Ошибка при обновлении класса:', err);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Удалить этот класс?')) return;
+    try {
+      await deleteClass(id);
+      setSavedClasses((prev) => prev.filter((cls) => cls.id !== id));
+      if (selectedClass?.id === id) handleReset();
+    } catch (err) {
+      console.error('Ошибка при удалении класса:', err);
+    }
+  };
+
+  const handleSelectClass = (cls) => {
+    setSelectedClass(cls);
+    setClassData({
+      name: cls.name,
+      hitDice: cls.hit_dice,
+      primaryStat: cls.primary_abilities || [],
+      spellcastingAbility: cls.spellcasting_ability || '',
+      description: cls.description || '',
+      features: cls.features || '',
+      proficiencies: cls.proficiencies || '',
+    });
+  };
+
+  const handleReset = () => {
+    setSelectedClass(null);
+    setClassData(initialState);
   };
 
   return (
@@ -78,6 +142,7 @@ const ClassEditor = () => {
                   onChange={handleChange}
                 />
               </div>
+
               <div className="form-group">
                 <label htmlFor="hitDice">Кость хитов</label>
                 <select
@@ -91,28 +156,23 @@ const ClassEditor = () => {
                   ))}
                 </select>
               </div>
+
               <div className="form-group">
-                <label htmlFor="primaryStat">Основная характеристика</label>
-                <select
-                  id="primaryStat"
-                  name="primaryStat"
-                  value={classData.primaryStat}
-                  onChange={handleChange}
-                >
-                  {[
-                    'Сила',
-                    'Ловкость',
-                    'Телосложение',
-                    'Интеллект',
-                    'Мудрость',
-                    'Харизма',
-                  ].map((stat) => (
-                    <option key={stat} value={stat}>
-                      {stat}
-                    </option>
+                <label>Основные характеристики</label>
+                <div className="abilities-grid">
+                  {abilities.map((ability) => (
+                    <label key={ability} className="ability-option">
+                      <input
+                        type="checkbox"
+                        checked={classData.primaryStat.includes(ability)}
+                        onChange={() => handleStatChange(ability)}
+                      />
+                      {ability}
+                    </label>
                   ))}
-                </select>
+                </div>
               </div>
+
               <div className="form-group">
                 <label htmlFor="spellcastingAbility">
                   Характеристика заклинаний
@@ -124,16 +184,9 @@ const ClassEditor = () => {
                   onChange={handleChange}
                 >
                   <option value="">—</option>
-                  {[
-                    'Сила',
-                    'Ловкость',
-                    'Телосложение',
-                    'Интеллект',
-                    'Мудрость',
-                    'Харизма',
-                  ].map((stat) => (
-                    <option key={stat} value={stat}>
-                      {stat}
+                  {abilities.map((ability) => (
+                    <option key={ability} value={ability}>
+                      {ability}
                     </option>
                   ))}
                 </select>
@@ -159,7 +212,7 @@ const ClassEditor = () => {
                 id="features"
                 name="features"
                 rows="3"
-                placeholder="Краткое описание ключевых черт класса..."
+                placeholder="Ключевые черты класса..."
                 value={classData.features}
                 onChange={handleChange}
               />
@@ -170,7 +223,7 @@ const ClassEditor = () => {
                 id="proficiencies"
                 name="proficiencies"
                 rows="2"
-                placeholder="Список оружия, доспехов, инструментов и т.п."
+                placeholder="Оружие, доспехи, инструменты..."
                 value={classData.proficiencies}
                 onChange={handleChange}
               />
@@ -178,9 +231,23 @@ const ClassEditor = () => {
           </div>
 
           <div className="form-actions">
-            <button className="submit-button" onClick={handleSave}>
-              Сохранить класс
-            </button>
+            {selectedClass ? (
+              <>
+                <button
+                  className="submit-button"
+                  onClick={() => handleUpdate(selectedClass.id)}
+                >
+                  Обновить класс
+                </button>
+                <button className="cancel-button" onClick={handleReset}>
+                  Отмена
+                </button>
+              </>
+            ) : (
+              <button className="submit-button" onClick={handleCreate}>
+                Сохранить класс
+              </button>
+            )}
           </div>
         </div>
 
@@ -192,7 +259,12 @@ const ClassEditor = () => {
             </div>
             <div className="class-meta">
               <span>Кость хитов: {classData.hitDice}</span>
-              <span>Осн. характеристика: {classData.primaryStat}</span>
+              <span>
+                Осн. характеристики:{' '}
+                {classData.primaryStat.length
+                  ? classData.primaryStat.join(', ')
+                  : '—'}
+              </span>
               {classData.spellcastingAbility && (
                 <span>Магия через: {classData.spellcastingAbility}</span>
               )}
@@ -202,12 +274,12 @@ const ClassEditor = () => {
             </div>
             {classData.features && (
               <div className="class-features">
-                Особенности: {classData.features}
+                <strong>Особенности:</strong> {classData.features}
               </div>
             )}
             {classData.proficiencies && (
               <div className="class-proficiencies">
-                Владения: {classData.proficiencies}
+                <strong>Владения:</strong> {classData.proficiencies}
               </div>
             )}
           </div>
@@ -222,22 +294,24 @@ const ClassEditor = () => {
           </div>
         ) : (
           <div className="classes-grid">
-            {savedClasses.map((cls, index) => (
+            {savedClasses.map((cls) => (
               <div
-                key={index}
-                className={`class-item ${index === selectedClass ? 'active' : ''}`}
-                onClick={() => handleSelectClass(index)}
+                key={cls.id}
+                className={`class-item ${selectedClass?.id === cls.id ? 'active' : ''}`}
+                onClick={() => handleSelectClass(cls)}
               >
                 <div className="class-item-header">
                   <h4>{cls.name || 'Безымянный класс'}</h4>
-                  <span className="class-hit-dice">{cls.hitDice}</span>
+                  <span className="class-hit-dice">{cls.hit_dice}</span>
                 </div>
-                <div className="class-primary-stat">{cls.primaryStat}</div>
+                <div className="class-primary-stat">
+                  {cls.primary_abilities?.join(', ') || '—'}
+                </div>
                 <button
                   className="delete-class"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDelete(index);
+                    handleDelete(cls.id);
                   }}
                 >
                   Удалить

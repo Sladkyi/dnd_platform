@@ -1,36 +1,40 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Layer, Image as KonvaImage } from 'react-konva';
 
-const RoomLayer = ({ room }) => {
-  const [image, setImage] = useState(null);
+const RoomLayer = ({ backgroundUrl }) => {
+  const imageRef = useRef(new window.Image());
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    if (!room || !room.background_image) {
-      setImage(null);
-      return;
-    }
+    if (!backgroundUrl) return;
 
-    const img = new window.Image();
+    const img = imageRef.current;
+
+    const isFullUrl = backgroundUrl.startsWith('http');
     img.crossOrigin = 'anonymous';
-
-    const isFullUrl = room.background_image.startsWith('http');
     img.src = isFullUrl
-      ? room.background_image
-      : `http://localhost:8000${room.background_image}`;
+      ? backgroundUrl
+      : `http://localhost:8000${backgroundUrl}`;
 
-    img.onload = () => setImage(img);
-  }, [room]);
+    const handleLoad = () => setIsLoaded(true);
+    img.onload = handleLoad;
 
-  if (!image) return null;
+    return () => {
+      img.onload = null; // Чистим обработчик при размонтировании
+      setIsLoaded(false);
+    };
+  }, [backgroundUrl]);
+
+  if (!isLoaded) return null;
 
   return (
     <Layer>
       <KonvaImage
-        image={image}
+        image={imageRef.current}
         x={0}
         y={0}
-        width={image.width}
-        height={image.height}
+        width={imageRef.current.width}
+        height={imageRef.current.height}
       />
     </Layer>
   );
