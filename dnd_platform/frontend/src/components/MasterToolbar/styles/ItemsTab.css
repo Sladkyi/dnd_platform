@@ -1,0 +1,24 @@
+.items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+}
+
+.item-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+}
+
+.item-thumbnail img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+}
+
+.item-name {
+    margin-top: 4px;
+    font-size: 14px;
+    text-align: center;
+}
