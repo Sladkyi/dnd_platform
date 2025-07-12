@@ -139,7 +139,7 @@ const EditingEntity = ({ isOpen, closeModal, selectedShape, profileId }) => {
   const [loading, setLoading] = useState(false);
   const [selectedClassName, setSelectedClassName] = useState('');
   const [showRaceModal, setShowRaceModal] = useState(false);
-
+  const [selectedImage, setSelectedImage] = useState(null);
   useEffect(() => {
     if (selectedShape) {
       setFormData(normalizeShapeData(selectedShape));
@@ -186,30 +186,67 @@ const EditingEntity = ({ isOpen, closeModal, selectedShape, profileId }) => {
     }
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedImage(file);
+      // для предпросмотра можно также:
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setFormData((prev) => ({ ...prev, image: event.target.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   const handleChange = useCallback((field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   }, []);
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      console.log('sending shapeData');
+      const dataToSend = {
+        ...formData,
+        statuses: formData.states || [],
+        attacks: (formData.attacks || []).map((a) => a.id),
+        spells: (formData.spells || []).map((s) => s.id),
+        temp_hp: formData.temp_hp,
+      };
 
-      await axiosInstance.patch(
-        `maps/shape/update/${selectedShape.id}/`,
-        {
-          ...formData,
-          statuses: formData.states || [],
-          attacks: (formData.attacks || []).map((a) => a.id),
-          spells: (formData.spells || []).map((s) => s.id), // заклинания по id 👈
-          temp_hp: formData.temp_hp,
-        },
-        {
-          headers: {
-            'X-CSRFToken':
-              document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '',
-          },
-        }
-      );
+      if (selectedImage) {
+        const patchData = new FormData();
+
+        Object.entries(dataToSend).forEach(([key, value]) => {
+          if (value !== null && value !== undefined && key !== 'image') {
+            if (Array.isArray(value)) {
+              value.forEach((v) => patchData.append(key, v));
+            } else {
+              patchData.append(key, value);
+            }
+          }
+        });
+
+        patchData.append('image', selectedImage);
+
+        await axiosInstance.patch(
+          `maps/shape/update/${selectedShape.id}/`,
+          patchData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              'X-CSRFToken':
+                document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '',
+            },
+          }
+        );
+      } else {
+        // Если изображение не менялось, отправляем JSON:
+        delete dataToSend.image; // 👈 Удаляем поле image
+        await axiosInstance.patch(
+          `maps/shape/update/${selectedShape.id}/`,
+          dataToSend
+        );
+      }
+
       closeModal();
     } catch (err) {
       console.error(err);
@@ -217,7 +254,6 @@ const EditingEntity = ({ isOpen, closeModal, selectedShape, profileId }) => {
       setLoading(false);
     }
   };
-
   const handleRaceSelect = (race) => {
     setFormData((prev) => {
       const updated = {
@@ -262,7 +298,11 @@ const EditingEntity = ({ isOpen, closeModal, selectedShape, profileId }) => {
                 />
                 <label className="position-absolute bottom-0 end-0 bg-primary rounded-circle p-1">
                   <Pencil size={18} className="text-white" />
-                  <input type="file" className="d-none" />
+                  <input
+                    type="file"
+                    className="d-none"
+                    onChange={handleImageChange} // 👈 Вот сюда обработчик
+                  />
                 </label>
               </div>
             </Col>

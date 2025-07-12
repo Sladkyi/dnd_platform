@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { Circle } from 'react-konva';
 
-const ItemInstanceLayer = ({ itemInstances }) => {
+const ItemInstanceLayer = ({ itemInstances, onItemClick }) => {
   // Логируем предметы один раз при получении
   useEffect(() => {
     console.log('Полученные экземпляры предметов:', itemInstances);
@@ -22,6 +22,7 @@ const ItemInstanceLayer = ({ itemInstances }) => {
             stroke="black"
             strokeWidth={2}
             perfectDrawEnabled={false}
+            onClick={() => onItemClick(item)} // ⬅️ Новый обработчик
           />
         ))}
     </>

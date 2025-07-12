@@ -4,9 +4,7 @@ const baseURL = 'http://localhost:8000/api';
 
 const axiosInstance = axios.create({
   baseURL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // ✅ Убираем заголовок полностью
 });
 
 // Добавляем access token к каждому запросу

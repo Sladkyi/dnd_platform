@@ -35,9 +35,8 @@ export const fetchShapes = (mapId) => {
 };
 
 // Создать новую комнату
-export const createRoom = (mapId, roomData) =>
-  axiosInstance.post(`/maps/CreateNewRoom/${mapId}/`, roomData);
-
+export const createRoom = (mapId, formData) =>
+  axiosInstance.post(`/maps/CreateNewRoom/${mapId}/`, formData);
 // Создать игровой URL / сессию
 export const createSessionURL = (mapId, payload) =>
   axiosInstance.post(`/maps/createURL/${mapId}/`, payload);
@@ -133,7 +132,9 @@ export const deleteClass = (id) =>
 export const deleteRace = (id) => axiosInstance.delete(`/races/${id}/delete/`);
 
 export const deleteItem = (id) => axiosInstance.delete(`/items/${id}/delete/`);
-
+export const updateItemPosition = (itemId, x, y) => {
+  return axiosInstance.patch(`/items/update/${itemId}/`, { x, y });
+};
 export const GetPlayerAttacks = (ownerId) =>
   axiosInstance.get(`/attacks/getByOwner/${ownerId}/`);
 
@@ -151,4 +152,88 @@ export const deleteAttack = (id) =>
 
 export const fetchSessionPlayers = (sessionId) => {
   return axiosInstance.get(`/sessions/${sessionId}/players/`);
+};
+
+export const fetchItems = (mapId) => {
+  return axiosInstance.get(`/items/by-map/${mapId}/`);
+};
+
+export const createItemInstance = (data) => {
+  return axiosInstance.post('/item-instances/', data);
+};
+
+// Обновить позицию экземпляра предмета
+export const updateItemInstance = (id, data) => {
+  return axiosInstance.patch(`/item-instances/${id}/`, data);
+};
+
+// Получить все экземпляры предметов для карты
+export const getItemInstancesByMap = (mapId) => {
+  return axiosInstance.get(`/item-instances/?map=${mapId}`);
+};
+
+// Удалить экземпляр предмета
+export const deleteItemInstance = (id) => {
+  return axiosInstance.delete(`/item-instances/${id}/`);
+};
+export const fetchItemInstances = (mapId) => {
+  return axiosInstance.get(`/item-instances/by-map/${mapId}/`);
+};
+
+export const fetchItemInstancesByRoom = (mapId, roomId) => {
+  return axiosInstance.get(`/item-instances/by-map/${mapId}/room/${roomId}/`);
+};
+// Получить все точки интереса для конкретной карты
+
+// Создать точку интереса
+export const createPointOfInterest = (data) => {
+  return axiosInstance.post('/poi/', data);
+};
+
+// Обновить точку интереса
+export const updatePointOfInterest = (poiId, formData) =>
+  axiosInstance.patch(`/poi/${poiId}/`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
+// Удалить точку интереса
+export const deletePointOfInterest = (id) => {
+  return axiosInstance.delete(`/poi/${id}/`);
+};
+
+export const fetchPointsOfInterest = (mapId, roomId = null) => {
+  let url = `/poi/?map=${mapId}`;
+  if (roomId) {
+    url += `&room=${roomId}`;
+  }
+  return axiosInstance.get(url);
+};
+
+export const getPlayerEntities = (id) => {
+  return axiosInstance.get(`/profile/getEntities/${id}/`);
+};
+
+export const cloneShape = (shapeId, mapId, x, y, roomId = null) => {
+  return axiosInstance.post('/shapes/clone/', {
+    shape_id: shapeId,
+    map_id: mapId,
+    x,
+    y,
+    room: roomId,
+  });
+};
+
+export const createShapeFromImage = (file, x, y, mapId, profileId, roomId) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  formData.append('x', x);
+  formData.append('y', y);
+  formData.append('map', mapId);
+  formData.append('creator', profileId);
+  formData.append('room', roomId); // 👈 обязательно
+  return axiosInstance.post('/shapes/create/', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 };

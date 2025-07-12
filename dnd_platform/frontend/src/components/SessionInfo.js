@@ -104,7 +104,7 @@ const SessionInfo = ({ players, currentTurnShapeId }) => {
               <div className="players-list">
                 {players.map((player) => (
                   <div
-                    key={player.id}
+                    key={player.id || player.username}
                     className={`player-item ${player.character?.shape_id === currentTurnShapeId ? 'current' : ''}`}
                   >
                     <div className="player-icon">

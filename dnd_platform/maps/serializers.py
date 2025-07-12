@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Map, Shape , Room , MapPoint, Spell, CharacterClass, Race, Item
+from .models import Map, Shape , Room , MapPoint, Spell, CharacterClass, Race, Item, ItemInstance, MapPointImage
 import logging
 import json
 logger = logging.getLogger(__name__)
@@ -32,17 +32,18 @@ class SpellSerializer(serializers.ModelSerializer):
         internal['classes_json'] = json.dumps(classes)
         return internal
 
-
 class ShapeSerializer(serializers.ModelSerializer):
     x = serializers.FloatField(required=False)
     y = serializers.FloatField(required=False)
-    type = serializers.CharField(required=False)
-    map = serializers.PrimaryKeyRelatedField(queryset=Map.objects.all())
-    # ✅ Сохраняем по ID, но читаем подробно
+    type = serializers.CharField(required=False, allow_blank=True)  # ⚠️ обязательно добавь allow_blank=True
+    map = serializers.PrimaryKeyRelatedField(queryset=Map.objects.all(), required=False)  # ⚠️ сделай required=False
+    image = serializers.ImageField(required=False, allow_null=True)  # ⚠️ это добавь явно
+
+    # Остальные поля без изменений
     attacks = serializers.PrimaryKeyRelatedField(queryset=Attack.objects.all(), many=True, required=False)
     spells = serializers.PrimaryKeyRelatedField(queryset=Spell.objects.all(), many=True, required=False)
     temp_hp = serializers.IntegerField(required=False)
-    # Раса
+
     race_name = serializers.CharField(source='race.name', read_only=True)
     race_traits = serializers.SerializerMethodField()
     race_languages = serializers.SerializerMethodField()
@@ -50,7 +51,6 @@ class ShapeSerializer(serializers.ModelSerializer):
     race_size = serializers.CharField(source='race.size', read_only=True)
     race_speed = serializers.IntegerField(source='race.speed', read_only=True)
 
-    # Класс
     character_class_name = serializers.CharField(source='character_class.name', read_only=True)
     class_primary_abilities = serializers.SerializerMethodField()
     class_hit_dice = serializers.CharField(source='character_class.hit_dice', read_only=True)
@@ -59,8 +59,9 @@ class ShapeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Shape
-        fields = '__all__'  # ✅ Поля карты теперь включены
-        read_only_fields = ['user', 'owner']  # 🔥 Вот это добавь
+        fields = '__all__'
+        read_only_fields = ['user', 'owner']
+
     def get_race_traits(self, obj):
         return obj.race.traits if obj.race and isinstance(obj.race.traits, list) else []
 
@@ -82,32 +83,48 @@ class ShapeSerializer(serializers.ModelSerializer):
                     features.extend(obj.character_class.class_features_by_level[lvl_str])
             return features or obj.character_class.starting_features
         return []
+
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         rep['attacks'] = AttackSerializer(instance.attacks.all(), many=True).data
         rep['spells'] = SpellSerializer(instance.spells.all(), many=True).data
         return rep
 
-class PointOfInterestSerializer(serializers.ModelSerializer):
+
+
+class MapPointImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MapPointImage
+        fields = ['id', 'image', 'order']
+
+
+class MapPointSerializer(serializers.ModelSerializer):
+    images = MapPointImageSerializer(many=True, read_only=True)
+
     class Meta:
         model = MapPoint
-        fields = '__all__'
+        fields = [
+            'id',
+            'map',
+            'room',
+            'x',
+            'y',
+            'title',
+            'description',
+            'icon_type',
+            'is_visible',
+            'image',
+            'images',
+            'created_at',
+            'updated_at'
+        ]
 
-    def create(self, validated_data):
-        return super().create(validated_data)
-class RoomSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Room
-        fields = ['id', 'map', 'name', 'background_image', 'description', 'order']
-        read_only_fields = ['id']
 
-    def create(self, validated_data):
-        return super().create(validated_data)
 
 
 class MapSerializer(serializers.ModelSerializer):
     shapes = ShapeSerializer(many=True, required=False)
-    pointsOfInterest = PointOfInterestSerializer(source='points', many=True, required=False)
+    pointsOfInterest = MapPointSerializer (source='points', many=True, required=False)
 
     class Meta:
         model = Map
@@ -127,7 +144,7 @@ class MapSerializer(serializers.ModelSerializer):
                     for shape_data in shapes_data
                 ])
                 logger.info(f"Shapes created successfully: {len(shapes_data)} shapes")
-
+            
             return map_instance
         except Exception as e:
             logger.error(f"Error in MapSerializer.create(): {e}")
@@ -157,15 +174,18 @@ class MapSerializer(serializers.ModelSerializer):
                     shape_instance = existing_shapes[shape_id]
                     updated = False
                     for attr, value in shape_data.items():
-                        if getattr(shape_instance, attr) != value:
+                        if hasattr(shape_instance, attr) and getattr(shape_instance, attr) != value:
                             setattr(shape_instance, attr, value)
                             updated = True
                     if updated:
                         updated_shape_ids.append(shape_id)
                 else:
-                    new_shapes.append(Shape(map=instance, current_map=instance, **shape_data))
+                    # Новый shape — сохраняем по одному, чтобы получить ID
+                    shape = Shape(map=instance, current_map=instance, **shape_data)
+                    shape.save()  # 👈 гарантированно получаем shape.id
+                    new_shapes.append(shape)
 
-            # Сохранение изменений для существующих фигур
+            # Обновление существующих фигур
             if updated_shape_ids:
                 Shape.objects.bulk_update(
                     [existing_shapes[shape_id] for shape_id in updated_shape_ids],
@@ -173,17 +193,13 @@ class MapSerializer(serializers.ModelSerializer):
                 )
                 logger.info(f"Updated shapes with IDs: {updated_shape_ids}")
 
-            # Сохранение новых фигур
-            if new_shapes:
-                Shape.objects.bulk_create(new_shapes)
-                logger.info(f"Created new shapes: {len(new_shapes)}")
-
+            logger.info(f"Created new shapes: {[s.id for s in new_shapes]}")
             logger.info("Finished updating map and shapes.")
             return instance
+
         except Exception as e:
             logger.error(f"Error in MapSerializer.update(): {e}")
             raise serializers.ValidationError(f"Failed to update Map: {str(e)}")
-
 
 class ShapeImageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -214,11 +230,25 @@ class RaceSerializer(serializers.ModelSerializer):
         internal['ability_bonuses'] = data.get('ability_bonuses', {})
         return internal
 
+class RoomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Room
+        fields = ['id', 'map', 'name', 'background_image', 'description', 'order']
+        read_only_fields = ['id', 'map']
 
+    def create(self, validated_data):
+        return super().create(validated_data)
 class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = '__all__'
         read_only_fields = ['creator']
+
+
+class ItemInstanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemInstance
+        fields = '__all__'
+
 
 

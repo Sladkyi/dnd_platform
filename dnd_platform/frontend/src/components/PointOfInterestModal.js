@@ -186,29 +186,29 @@ const PointOfInterestModal = ({ poi, onClose, onSave }) => {
                   />
                 </div>
                 <div className="image-controls">
-                  <span>
+                  <span className="image-position">
                     {index + 1}/{images.length}
                   </span>
                   <button
                     type="button"
+                    className="control-btn delete-btn"
                     onClick={() => handleRemoveImage(index)}
-                  >
-                    Удалить
-                  </button>
+                    title="Удалить"
+                  />
                   <button
                     type="button"
+                    className="control-btn up-btn"
                     onClick={() => handleMoveUp(index)}
                     disabled={index === 0}
-                  >
-                    ↑
-                  </button>
+                    title="Вверх"
+                  />
                   <button
                     type="button"
+                    className="control-btn down-btn"
                     onClick={() => handleMoveDown(index)}
                     disabled={index === images.length - 1}
-                  >
-                    ↓
-                  </button>
+                    title="Вниз"
+                  />
                 </div>
               </div>
             ))}

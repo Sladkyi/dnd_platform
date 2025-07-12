@@ -12,13 +12,16 @@ const JoinRoomModal = ({ roomId, onClose, onJoinSuccess }) => {
     setMessage('');
 
     try {
-      const response = await fetch(`http://localhost:8000/api/maps/room/${roomId}/join/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await fetch(
+        `http://localhost:8000/api/maps/room/${roomId}/join/`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
 
       const data = await response.json();
 
@@ -36,27 +39,27 @@ const JoinRoomModal = ({ roomId, onClose, onJoinSuccess }) => {
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal">
-        <h2>Присоединиться к комнате</h2>
+    // <div className="modal-overlay">
+    <div className="modal">
+      <h2>Присоединиться к комнате</h2>
 
-        {message && <p className="success-message">{message}</p>}
-        {error && <p className="error-message">{error}</p>}
+      {message && <p className="success-message">{message}</p>}
+      {error && <p className="error-message">{error}</p>}
 
-        <div className="modal-actions">
-          <button
-            onClick={handleJoinRoom}
-            disabled={loading}
-            className="join-button"
-          >
-            {loading ? 'Загружается...' : 'Присоединиться'}
-          </button>
-          <button onClick={onClose} className="close-button">
-            Закрыть
-          </button>
-        </div>
+      <div className="modal-actions">
+        <button
+          onClick={handleJoinRoom}
+          disabled={loading}
+          className="join-button"
+        >
+          {loading ? 'Загружается...' : 'Присоединиться'}
+        </button>
+        <button onClick={onClose} className="close-button">
+          Закрыть
+        </button>
       </div>
     </div>
+    // </div>
   );
 };
 

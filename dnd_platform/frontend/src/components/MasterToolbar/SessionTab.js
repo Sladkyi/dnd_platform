@@ -1,15 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-const SessionTab = () => {
+const SessionTab = ({
+  onInvitePlayers,
+  onResetMap,
+  onNextTurn,
+  onEndSession,
+}) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleInvite = async () => {
+    const url = await onInvitePlayers();
+    if (url) {
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error('Ошибка копирования:', err);
+        window.prompt('Скопируйте ссылку вручную:', url);
+      }
+    }
+  };
+
   return (
     <div className="tab-panel">
-      <button onClick={() => console.log('Отправить сообщение')}>✉️</button>
-      <button onClick={() => console.log('Сбросить карту')}>♻️</button>
-      <button onClick={() => console.log('Следующий ход')}>⏭️</button>
-      <button
-        onClick={() => console.log('Завершить сессию')}
-        className="danger"
-      >
+      <button onClick={handleInvite}>🔗</button>
+      <button onClick={onResetMap}>♻️</button>
+      <button onClick={onNextTurn}>⏭️</button>
+      <button onClick={onEndSession} className="danger">
         ⏹️
       </button>
     </div>

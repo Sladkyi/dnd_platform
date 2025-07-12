@@ -9,6 +9,8 @@
     flex-direction: column;
     align-items: center;
     cursor: pointer;
+    /* width: 7rem;
+    height: 7rem; */
 }
 
 .item-thumbnail img {

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Layer, Circle } from 'react-konva';
 
-const PointLayer = ({ points, onSelectRoom }) => {
+const PointLayer = ({ points, onSelectRoom, onPointClick }) => {
   return (
     <Layer>
       {points.map((point) => (
@@ -14,7 +14,7 @@ const PointLayer = ({ points, onSelectRoom }) => {
           fill="blue"
           opacity={0.4}
           onClick={() => {
-            if (point.room) onSelectRoom(point.room);
+            if (onPointClick) onPointClick(point);
           }}
         />
       ))}

@@ -59,6 +59,7 @@ class MapPoint(models.Model):
     is_visible = models.BooleanField(default=True, verbose_name="Видимость на карте")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    image = models.ImageField(upload_to='poi_images/', null=True, blank=True, verbose_name="Картинка точки")
 
     def __str__(self):
         return f"{self.title} ({self.map.title})"
@@ -66,6 +67,15 @@ class MapPoint(models.Model):
     class Meta:
         verbose_name = "Точка на карте"
         verbose_name_plural = "Точки на карте"
+
+class MapPointImage(models.Model):
+    point = models.ForeignKey('MapPoint', on_delete=models.CASCADE, related_name='images', verbose_name='Точка интереса')
+    image = models.ImageField(upload_to='poi_images/', verbose_name='Картинка слайд-шоу')
+    order = models.PositiveIntegerField(default=0, verbose_name='Порядок показа')
+
+    def __str__(self):
+        return f"Картинка для {self.point.title}"
+
 
 class BaseAsset(models.Model):
     creator = models.ForeignKey(
@@ -75,6 +85,7 @@ class BaseAsset(models.Model):
         blank=True,
         verbose_name="Создатель"
     )
+    image = models.ImageField(upload_to='item_images/', blank=True, null=True, verbose_name="Картинка")
     is_public = models.BooleanField(default=False, verbose_name="Публичный")
     name = models.CharField(max_length=100, verbose_name="Название")
     description = models.TextField(blank=True, verbose_name="Описание")
@@ -234,20 +245,27 @@ class Spell(BaseAsset):
 class Item(BaseAsset):
     # ✨ Редкость
     RARITY_CHOICES = [
-    ('common', 'Обычный'),
-    ('uncommon', 'Необычный'),
-    ('rare', 'Редкий'),
-    ('very_rare', 'Очень редкий'),  # 👈 Добавь это
-    ('epic', 'Эпический'),
-    ('legendary', 'Легендарный'),
-    ('artifact', 'Артефакт'),
+        ('common', 'Обычный'),
+        ('uncommon', 'Необычный'),
+        ('rare', 'Редкий'),
+        ('very_rare', 'Очень редкий'),
+        ('epic', 'Эпический'),
+        ('legendary', 'Легендарный'),
+        ('artifact', 'Артефакт'),
     ]
     rarity = models.CharField(max_length=20, choices=RARITY_CHOICES, default='common', verbose_name="Редкость")
+    default_find_diff = models.IntegerField(default=0, verbose_name="Сложность нахождения по умолчанию")
+    # 🔗 Привязка к карте
+    map = models.ForeignKey('Map', on_delete=models.CASCADE, related_name='items', null=True, blank=True, verbose_name="Карта")
+
+    # 📍 Координаты
+    x = models.FloatField(blank=True, null=True, verbose_name="Координата X")
+    y = models.FloatField(blank=True, null=True, verbose_name="Координата Y")
 
     # ⚔️ Боевая механика
-    damage = models.CharField(max_length=50, blank=True, null=True, verbose_name="Урон")  # Например: "1d8 + 2"
+    damage = models.CharField(max_length=50, blank=True, null=True, verbose_name="Урон")
     armor_bonus = models.IntegerField(default=0, verbose_name="Бонус к броне")
-    effect = models.TextField(blank=True, null=True, verbose_name="Эффект")  # Например: "Восстанавливает 5 HP"
+    effect = models.TextField(blank=True, null=True, verbose_name="Эффект")
     is_magical = models.BooleanField(default=False, verbose_name="Магический")
 
     # 🎭 Использование
@@ -269,7 +287,7 @@ class Item(BaseAsset):
 
     # 🧠 Требования и доступность
     requirements = models.TextField(blank=True, null=True, verbose_name="Требования")
-    usable_by = models.JSONField(default=list, blank=True, verbose_name="Кем используется")  # ["Wizard", "Cleric"]
+    usable_by = models.JSONField(default=list, blank=True, verbose_name="Кем используется")
 
     # 🧬 Нарратив и особенности
     flavor_text = models.CharField(max_length=200, blank=True, null=True, verbose_name="Флэйвор-текст")
@@ -287,6 +305,34 @@ class Item(BaseAsset):
         verbose_name = "Предмет"
         verbose_name_plural = "Предметы"
 
+# предмет на карте 
+class ItemInstance(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='instances', verbose_name="Шаблон предмета")
+    map = models.ForeignKey('Map', on_delete=models.CASCADE, related_name='item_instances', verbose_name="Карта")
+    room = models.ForeignKey('Room', on_delete=models.SET_NULL, null=True, blank=True, related_name='item_instances', verbose_name="Комната")
+    x = models.FloatField(blank=True, null=True, verbose_name="Координата X")
+    y = models.FloatField(blank=True, null=True, verbose_name="Координата Y")
+    quantity = models.IntegerField(default=1, verbose_name="Количество")
+    is_taken = models.BooleanField(default=False, verbose_name="Поднят с карты")
+    is_hidden = models.BooleanField(default= True , verbose_name="Спрятан?")
+    find_diff = models.IntegerField(null=True, blank=True, verbose_name="Сложность нахождения")
+    taken_by = models.ForeignKey(
+        'Shape',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='taken_items',
+        verbose_name="Кто поднял предмет"
+    )
+    class Meta:
+        verbose_name = "Экземпляр предмета на карте"
+        verbose_name_plural = "Экземпляры предметов на карте"
+    def save(self, *args, **kwargs):
+        if self.find_diff is None:
+            self.find_diff = self.item.default_find_diff
+        super().save(*args, **kwargs)
+
+
 class RoomPlayer(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
@@ -298,7 +344,7 @@ class Shape(models.Model):
         ('circle', 'Circle'),
         ('rectangle', 'Rectangle'),
     ]
-
+    room = models.ForeignKey(Room, on_delete=models.SET_NULL, null=True, blank=True)
     # Основные поля
     name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Имя персонажа")
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")

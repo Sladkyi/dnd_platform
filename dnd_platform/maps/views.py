@@ -2,149 +2,136 @@ from rest_framework import viewsets, generics, status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-
+from rest_framework.generics import UpdateAPIView
 from django.shortcuts import get_object_or_404
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-from rest_framework import permissions
 from rest_framework.viewsets import ModelViewSet
-from .models import Map, GameSession, PlayerInSession
-from .serializers import MapSerializer
-from .models import Map, Room, Shape, User, GameSession, PlayerInSession, Spell, CharacterClass, Race, Item
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.generics import CreateAPIView
+from django.db import models
+from rest_framework.decorators import action
+from django_filters.rest_framework import DjangoFilterBackend
+# Модели
+from .models import Map, GameSession, PlayerInSession, Room, Shape, User, Spell, CharacterClass, Race, Item, Attack, ItemInstance, MapPointImage
+from .models import MapPoint
+# Сериализаторы
 from .serializers import (
-    MapSerializer,
-    RoomSerializer,
-    ShapeSerializer,
-    ShapeImageSerializer,
-    PointOfInterestSerializer,
-    SpellSerializer,
-    CharacterClassSerializer,
-    RaceSerializer,
-    ItemSerializer
+    MapSerializer, RoomSerializer, ShapeSerializer, ShapeImageSerializer,
+    SpellSerializer, CharacterClassSerializer,
+    RaceSerializer, ItemSerializer, AttackSerializer, ItemInstanceSerializer , MapPointSerializer
 )
+from django.forms.models import model_to_dict
+import json
+# ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
 
-from .models import Attack
-from .serializers import AttackSerializer
+def broadcast_shape_update(shape, action):
+    """Отправляет обновление фигуры через WebSocket"""
+    channel_layer = get_channel_layer()
+    group_name = f"map_{shape.current_map_id}" if shape.current_map_id else "map_global"
+    
+    payload = {
+        "type": "broadcast_event",
+        "action": action,
+        "payload": ShapeSerializer(shape).data if action != "delete" else {"id": shape.id}
+    }
+    
+    async_to_sync(channel_layer.group_send)(group_name, payload)
 
-# ==================== Map Views ====================
+# ==================== КАРТЫ (MAPS) ====================
+
 class MapViewSet(ModelViewSet):
+    """
+    ViewSet для полного цикла работы с картами (CRUD операции)
+    - Создание, чтение, обновление и удаление карт
+    - Проверка прав доступа пользователя
+    - Возвращает данные карты с фигурами при запросе
+    """
     queryset = Map.objects.all()
     serializer_class = MapSerializer
     permission_classes = [permissions.IsAuthenticated]
-
     def get_queryset(self):
-        return self.queryset
+        user = self.request.user
+        return self.queryset.filter(
+            models.Q(user=user) |
+            models.Q(id__in=PlayerInSession.objects.filter(user=user).values_list('session__map_id', flat=True))
+        )
 
     def get_object(self):
+        """Проверяет права доступа к конкретной карте"""
         obj = super().get_object()
         user = self.request.user
 
+        # Доступ есть у владельца и участников сессии
         if obj.user == user:
             return obj
 
         if PlayerInSession.objects.filter(session__map=obj, user=user).exists():
             return obj
 
-        from rest_framework.exceptions import PermissionDenied
         raise PermissionDenied("Нет доступа к этой карте.")
 
     def retrieve(self, request, *args, **kwargs):
+        """Возвращает данные карты со всеми активными фигурами"""
         map_instance = self.get_object()
         serializer = self.get_serializer(map_instance)
 
-        # Загружаем все фигуры, которые находятся на этой карте прямо сейчас
+        # Получаем все фигуры на текущей карте
         session_shapes = Shape.objects.filter(current_map=map_instance)
-
-        # Сериализуем фигуры
         session_shapes_data = ShapeSerializer(session_shapes, many=True).data
 
         response_data = serializer.data
-        response_data['session_shapes'] = session_shapes_data  # 👈 Это поле обязательно
-
+        response_data['session_shapes'] = session_shapes_data
         return Response(response_data)
 
 
-
 class MapDetailAPIView(APIView):
+    """Детальное управление картой через API (GET/POST/PUT)"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
-        print(f"DEBUG: Пытаюсь найти карту с ID: {pk}")
-        exists = Map.objects.filter(pk=pk).exists()
-        print(f"DEBUG: Карта с ID {pk} существует? {exists}")
-
-        if not exists:
-            print("DEBUG: Карта не найдена.")
-            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        map_instance = Map.objects.get(pk=pk)
-        print(f"DEBUG: Карта найдена: {map_instance}")
-
+        """Получение детальной информации о карте"""
+        map_instance = get_object_or_404(Map, pk=pk)
+        
+        # Проверка прав доступа
+        if not (map_instance.user == request.user or 
+                PlayerInSession.objects.filter(session__map=map_instance, user=request.user).exists()):
+            return Response({"detail": "Нет доступа"}, status=403)
+        
         serializer = MapSerializer(map_instance)
-        print(f"DEBUG: Сериализованные данные: {serializer.data}")
         return Response(serializer.data)
 
     def post(self, request, pk):
-        print("DEBUG: Получены данные на создание:", request.data)
-
+        """Создание новой карты"""
         serializer = MapSerializer(data=request.data)
         if serializer.is_valid():
-            print("DEBUG: Данные валидны, создаём карту...")
             user = get_object_or_404(User, pk=pk)
             serializer.save(user=user)
-            print("DEBUG: Карта успешно создана:", serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        print("DEBUG: Ошибки валидации:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, pk):
-        print(f"DEBUG: Пытаемся обновить карту с ID: {pk}")
-        print("DEBUG: Получены данные на обновление:", request.data)
-
+        """Обновление существующей карты"""
         map_instance = get_object_or_404(Map, pk=pk, user=request.user)
-        print(f"DEBUG: Карта найдена для обновления: {map_instance}")
-
         serializer = MapSerializer(map_instance, data=request.data)
+        
         if serializer.is_valid():
-            print("DEBUG: Данные валидны, сохраняем изменения...")
             serializer.save()
-            print("DEBUG: Карта успешно обновлена:", serializer.data)
-
-            # 📡 WebSocket-рассылка новой фигуры
-            from channels.layers import get_channel_layer
-            from asgiref.sync import async_to_sync
-
-            channel_layer = get_channel_layer()
-
-            # Если отправили только одну фигуру (твой кейс)
-            if 'shapes' in serializer.data and serializer.data['shapes']:
-                new_shape = serializer.data['shapes'][-1]  # Последняя добавленная фигура
-
-                print(f"DEBUG: Рассылаем новую фигуру через WebSocket: {new_shape}")
-
-                async_to_sync(channel_layer.group_send)(
-                    f"map_{map_instance.id}",
-                    {
-                        "type": "broadcast_event",
-                        "action": "create",
-                        "payload": new_shape
-                    }
-                )
-
             return Response(serializer.data)
-
-        print("DEBUG: Ошибки валидации при обновлении:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class MapUploadImage(APIView):
+    """Загрузка изображения для фигуры на карте"""
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
         shape = get_object_or_404(Shape, pk=pk)
-
+        
         # Проверка прав доступа
-        if not (shape.owner == request.user or shape.user == request.user or shape.map.user == request.user):
+        if not (shape.owner == request.user or 
+                shape.user == request.user or 
+                shape.map.user == request.user):
             return Response({"error": "Нет доступа"}, status=403)
 
         serializer = ShapeImageSerializer(shape, data=request.data, partial=True)
@@ -154,99 +141,246 @@ class MapUploadImage(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# ==================== ФИГУРЫ (SHAPES) ====================
+
 class ShapeListView(APIView):
+    """Получение списка фигур для конкретной карты"""
     def get(self, request, map_id):
         shapes = Shape.objects.filter(map_id=map_id)
         serializer = ShapeSerializer(shapes, many=True)
         return Response(serializer.data)
 
+
 class ShapeDetailView(APIView):
+    """Детальное управление отдельной фигурой"""
     def get(self, request, pk):
         shape = get_object_or_404(Shape, pk=pk)
         serializer = ShapeSerializer(shape)
         return Response(serializer.data)
+
     def patch(self, request, pk):
+        """Частичное обновление фигуры"""
         shape = Shape.objects.get(pk=pk)
         serializer = ShapeSerializer(shape, data=request.data, partial=True)
+        
         if serializer.is_valid():
             serializer.save()
-
-            # 📡 WebSocket обновление
-            from channels.layers import get_channel_layer
-            from asgiref.sync import async_to_sync
-
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                f"map_{shape.map_id}",
-                {
-                    "type": "broadcast_event",
-                    "action": "update",
-                    "payload": serializer.data,
-                }
-            )
-
+            broadcast_shape_update(shape, "update")
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
 
     def delete(self, request, pk):
+        """Удаление фигуры"""
         shape = Shape.objects.get(pk=pk)
         shape_id = shape.id
         map_id = shape.map_id
         shape.delete()
-
-        # 📡 WebSocket удаление
-        from channels.layers import get_channel_layer
-        from asgiref.sync import async_to_sync
-
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f"map_{map_id}",
-            {
-                "type": "broadcast_event",
-                "action": "delete",
-                "payload": {"id": shape_id},
-            }
-        )
-
+        
+        # Отправка события удаления через WebSocket
+        broadcast_shape_update(shape, "delete")
         return Response({"detail": "Фигура удалена"})
+
+
 class ShapeCreateView(APIView):
+    """Создание новой фигуры"""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        print("DEBUG: Запрос на создание фигуры", request.data)
-
         serializer = ShapeSerializer(data=request.data)
         if serializer.is_valid():
             shape = serializer.save(user=request.user, owner=request.user)
-
-            # 🔥 Обязательно привязываем current_map
+            
+            # Привязка к текущей карте
             if not shape.current_map:
                 shape.current_map = shape.map
                 shape.save(update_fields=['current_map'])
-
-            print(f"DEBUG: Фигура создана: {shape.id}")
-
-            # 📡 Отправляем через WebSocket
-            from channels.layers import get_channel_layer
-            from asgiref.sync import async_to_sync
-
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                f"map_{shape.map_id}",
-                {
-                    "type": "broadcast_event",
-                    "action": "create",
-                    "payload": ShapeSerializer(shape).data,
-                }
-            )
-
+            print("🧾 Shape создан пользователем:", request.user.id)
+            print("🧾 Owner ID:", shape.owner_id)
+            print("🧾 Current WS-пользователь будет сравниваться с этим ID")
+            # Отправка события создания через WebSocket
+            broadcast_shape_update(shape, "create")
             return Response(ShapeSerializer(shape).data, status=201)
-
-        print("DEBUG: Ошибка при создании фигуры", serializer.errors)
         return Response(serializer.errors, status=400)
 
-# ==================== Room Views ====================
+
+EXCLUDED_FIELDS = {
+    'id', 'pk', 'created_at', 'updated_at',
+    'user', 'owner', 'current_map', 'map',
+    'inventory', 'spells', 'attacks', 'image',
+}
+
+def clone_shape(original: Shape, overrides: dict = None) -> Shape:
+    overrides = overrides or {}
+
+    original_dict = model_to_dict(original)
+
+    # Удаляем поля, которые нельзя копировать напрямую
+    for field in EXCLUDED_FIELDS:
+        original_dict.pop(field, None)
+
+    # Подставляем FK-объекты, а не id
+    if original.race:
+        original_dict['race'] = original.race
+    if original.character_class:
+        original_dict['character_class'] = original.character_class
+    if original.head_slot:
+        original_dict['head_slot'] = original.head_slot
+    if original.body_slot:
+        original_dict['body_slot'] = original.body_slot
+    if original.weapon_slot:
+        original_dict['weapon_slot'] = original.weapon_slot
+
+    # Объединяем с overrides (всё, что передано вручную)
+    clone_data = {
+        **original_dict,
+        'is_clone': True,
+        **overrides
+    }
+
+    # Создание клона
+    clone = Shape.objects.create(**clone_data)
+
+    # Копирование M2M-полей
+    clone.spells.set(original.spells.all())
+    clone.attacks.set(original.attacks.all())
+
+    return clone
+
+
+class ShapeDetailAPIView(APIView):
+    """Расширенное управление фигурами (GET/PUT/PATCH/DELETE)"""
+    permission_classes = [IsAuthenticated]
+
+    def _check_access(self, shape, user):
+        """Проверка прав доступа к фигуре"""
+        return (
+            shape.owner == user or
+            shape.user == user or
+            (shape.current_map and shape.current_map.user == user)
+        )
+
+    def get(self, request, pk):
+        """Получение детальной информации о фигуре"""
+        shape = get_object_or_404(Shape, pk=pk)
+        if not self._check_access(shape, request.user):
+            return Response({"detail": "Нет доступа"}, status=403)
+        serializer = ShapeSerializer(shape)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        """Полное обновление фигуры"""
+        shape = get_object_or_404(Shape, pk=pk)
+        if not self._check_access(shape, request.user):
+            return Response({"detail": "Нет доступа"}, status=403)
+        
+        # Обработка данных
+        shape_data = request.data.get('shapes')
+        if isinstance(shape_data, list) and shape_data:
+            shape_data = shape_data[0]
+        else:
+            shape_data = request.data
+
+        serializer = ShapeSerializer(shape, data=shape_data)
+        if serializer.is_valid():
+            serializer.save()
+            broadcast_shape_update(shape, "update")
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, pk):
+        """Частичное обновление фигуры"""
+        shape = get_object_or_404(Shape, pk=pk)
+        
+        print("🔍 Запрос на обновление фигуры с ID:", pk)
+        print("🔍 Данные запроса (сырые):", request.data)
+
+        if not self._check_access(shape, request.user):
+            print("🚫 Ошибка доступа для пользователя", request.user)
+            return Response({"detail": "Нет доступа"}, status=403)
+
+        shape_data = request.data.get('shapes', [request.data])[0]
+        print("🔍 Данные, поступающие в сериализатор:", shape_data)
+
+        serializer = ShapeSerializer(shape, data=shape_data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            print("✅ Фигура успешно обновлена:", serializer.data)
+            broadcast_shape_update(shape, "update")
+            return Response(serializer.data)
+
+        print("❌ Ошибки сериализации при обновлении фигуры:", serializer.errors)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+    def delete(self, request, pk):
+        """Удаление фигуры"""
+        shape = get_object_or_404(Shape, pk=pk)
+        if not self._check_access(shape, request.user):
+            return Response({"detail": "Нет доступа"}, status=403)
+        
+        shape.delete()
+        broadcast_shape_update(shape, "delete")
+        return Response({"detail": "Фигура удалена"}, status=status.HTTP_204_NO_CONTENT)
+
+
+class EntityEditing(APIView):
+    """Упрощенное редактирование сущностей (фигур)"""
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        """Частичное обновление сущности"""
+        shape = get_object_or_404(Shape, pk=pk)
+        serializer = ShapeSerializer(shape, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, pk):
+        """Получение информации о сущности"""
+        shape = get_object_or_404(Shape, pk=pk)
+        serializer = ShapeSerializer(shape)
+        return Response(serializer.data)
+class ShapeCloneView(APIView):
+    def post(self, request):
+        shape_id = request.data.get('shape_id')
+        map_id = request.data.get('map_id')
+        x = request.data.get('x')
+        y = request.data.get('y')
+        room_id = request.data.get('room_id')
+
+        if not all([shape_id, map_id, x, y]):
+            return Response({'error': 'Missing required fields'}, status=400)
+
+        try:
+            original = Shape.objects.get(id=shape_id)
+        except Shape.DoesNotExist:
+            return Response({'error': 'Shape not found'}, status=404)
+
+        try:
+            room = Room.objects.get(id=room_id) if room_id else None
+        except Room.DoesNotExist:
+            return Response({'error': 'Room not found'}, status=404)
+
+        clone = clone_shape(
+            original,
+            overrides={
+                'name': f"{original.name} (копия)" if original.name else "Клон",
+                'x': x,
+                'y': y,
+                'map_id': map_id,
+                'current_map_id': map_id,
+                'user_id': original.user_id,
+                'room': room,
+            }
+        )
+
+        return Response(ShapeSerializer(clone).data, status=201)
+# ==================== КОМНАТЫ (ROOMS) ====================
+
 class RoomView(APIView):
+    """Получение списка комнат для карты"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
@@ -256,130 +390,45 @@ class RoomView(APIView):
 
 
 class SingleRoomView(APIView):
+    """Детальная информация об отдельной комнате"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
-        room = get_object_or_404(Room, pk=pk, map__user=request.user)
+        room = get_object_or_404(Room, pk=pk)
+        
+        # Проверка прав доступа
+        is_owner = room.map.user == request.user
+        is_player = PlayerInSession.objects.filter(
+            session__map=room.map, user=request.user
+        ).exists()
+
+        if not is_owner and not is_player:
+            return Response({"detail": "Нет доступа к этой комнате."}, status=403)
+
         serializer = RoomSerializer(room)
         return Response(serializer.data)
 
 
-class CreateNewRoomView(APIView):
+class CreateNewRoomView(CreateAPIView):
+    """Создание новой комнаты"""
     permission_classes = [IsAuthenticated]
+    serializer_class = RoomSerializer
+    parser_classes = [MultiPartParser, FormParser]
 
-    def post(self, request, pk):
-        map_instance = get_object_or_404(Map, pk=pk, user=request.user)
-        data = request.data.copy()
-        data['map'] = pk
-
-        serializer = RoomSerializer(data=data)
+    def create(self, request, *args, **kwargs):
+        map_instance = get_object_or_404(Map, pk=self.kwargs['pk'], user=self.request.user)
+        serializer = self.get_serializer(data=request.data)
+        
         if serializer.is_valid():
             serializer.save(map=map_instance)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ==================== Shape Views ====================
-class ShapeDetailAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+# ==================== ИГРОВЫЕ СЕССИИ ====================
 
-    def _check_access(self, shape, user):
-        return (
-            shape.owner == user or
-            shape.user == user or
-            (shape.current_map and shape.current_map.user == user)
-        )
-
-    def _notify_update(self, shape):
-        print("nitifying")
-        channel_layer = get_channel_layer()
-
-        if shape.current_map_id:
-            group = f"map_{shape.current_map_id}"
-        else:
-            group = "map_global"
-
-        async_to_sync(channel_layer.group_send)(
-            group,
-            {
-                "type": "broadcast_event",
-                "action": "update",
-                "payload": ShapeSerializer(shape).data
-            }
-        )
-    def get(self, request, pk):
-        shape = get_object_or_404(Shape, pk=pk)
-        if not self._check_access(shape, request.user):
-            return Response({"detail": "Нет доступа"}, status=403)
-        serializer = ShapeSerializer(shape)
-        return Response(serializer.data)
-
-    def put(self, request, pk):
-        print("📦 Пришедшие данные:", request.data)
-        shape = get_object_or_404(Shape, pk=pk)
-        if not self._check_access(shape, request.user):
-            return Response({"detail": "Нет доступа"}, status=403)
-
-        # Универсальная подгрузка данных
-        shape_data = request.data.get('shapes')
-        print(shape_data)
-        if isinstance(shape_data, list) and shape_data:
-            shape_data = shape_data[0]
-        else:
-            shape_data = request.data
-
-        serializer = ShapeSerializer(shape, data=shape_data)
-
-        if serializer.is_valid():
-            print(f"DEBUG: Данные после валидации: {serializer.validated_data}")
-            serializer.save()
-            self._notify_update(shape)
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def patch(self, request, pk):
-        shape = get_object_or_404(Shape, pk=pk)
-        if not self._check_access(shape, request.user):
-            return Response({"detail": "Нет доступа"}, status=403)
-
-        shape_data = request.data.get('shapes', [request.data])[0]
-        serializer = ShapeSerializer(shape, data=shape_data, partial=True)
-
-        if serializer.is_valid():
-            print(f"DEBUG: Данные после валидации: {serializer.validated_data}")
-            serializer.save()
-            self._notify_update(shape)
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk):
-        shape = get_object_or_404(Shape, pk=pk)
-        if not self._check_access(shape, request.user):
-            return Response({"detail": "Нет доступа"}, status=403)
-
-        shape.delete()
-        return Response({"detail": "Shape deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
-
-
-class EntityEditing(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def patch(self, request, pk):
-        shape = get_object_or_404(Shape, pk=pk)
-        serializer = ShapeSerializer(shape, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def get(self, request, pk):
-        shape = get_object_or_404(Shape, pk=pk)
-        serializer = ShapeSerializer(shape)
-        return Response(serializer.data)
-
-
-# ==================== Game Session Views ====================
 class CreateURLView(APIView):
+    """Создание игровой сессии и URL для присоединения"""
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
@@ -390,6 +439,7 @@ class CreateURLView(APIView):
             map_instance.last_opened_room_id = last_room_id
             map_instance.save()
 
+        # Создание новой игровой сессии
         session = GameSession.objects.create(
             map=map_instance,
             owner=request.user,
@@ -404,18 +454,18 @@ class CreateURLView(APIView):
 
 
 class JoinGameView(APIView):
+    """Присоединение к игровой сессии"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, session_id):
         session = get_object_or_404(GameSession, id=session_id)
         user = request.user
 
+        # Определение роли пользователя
         if user == session.owner:
-            return Response({
-                "role": "master",
-                "map_id": session.map.id
-            })
+            return Response({"role": "master", "map_id": session.map.id})
 
+        # Возвращаем доступные фигуры для игрока
         available_shapes = Shape.objects.filter(owner=user)
         return Response({
             "role": "player",
@@ -425,81 +475,60 @@ class JoinGameView(APIView):
 
 
 class JoinSessionWithShapeView(APIView):
+    """Присоединение к сессии с использованием конкретной фигуры"""
     permission_classes = [IsAuthenticated]
 
     def post(self, request, session_id):
-        print('DEBUG: Попали в JoinSessionWithShapeView')
-        print('DEBUG request.data: ', request.data)
-
         shape_id = request.data.get("shape_id")
-        print('DEBUG shape_id: ', shape_id)
-
         if not shape_id:
-            print('DEBUG Ошибка: shape_id не передан')
             return Response({"error": "shape_id обязателен"}, status=400)
 
         session = get_object_or_404(GameSession, id=session_id)
-        print('DEBUG Сессия найдена: ', session)
         user = request.user
 
+        # Проверка, не присоединился ли уже пользователь
         if PlayerInSession.objects.filter(session=session, user=user).exists():
-            print('DEBUG Пользователь уже в сессии')
             return Response({"detail": "Вы уже присоединились к этой сессии"}, status=400)
 
-        try:
-            shape = Shape.objects.get(id=shape_id)
-            print('DEBUG Фигура найдена: ', shape)
-        except Shape.DoesNotExist:
-            print('DEBUG Фигура не найдена')
-            return Response({"detail": "Фигура не найдена"}, status=400)
-
+        # Получение и проверка фигуры
+        shape = get_object_or_404(Shape, id=shape_id)
         if shape.owner != user and shape.user != user:
-            print('DEBUG Нет доступа к фигуре')
-            return Response({"detail": "Нет доступа"}, status=403)
+            return Response({"detail": "Нет доступа к фигуре"}, status=403)
 
+        # Обновление фигуры
         shape.owner = user
         shape.current_map = session.map
         shape.save()
 
-        PlayerInSession.objects.create(
-            session=session,
-            user=user,
-            character=shape
-        )
+        # Создание связи игрока с сессией
+        PlayerInSession.objects.create(session=session, user=user, character=shape)
 
-        print('DEBUG Успешно присоединились')
-
+        # Отправка уведомлений через WebSocket
         channel_layer = get_channel_layer()
-
-        # Сообщаем мастеру о новом игроке
         async_to_sync(channel_layer.group_send)(
             f"map_{session.map.id}",
             {
                 "type": "broadcast_event",
                 "action": "session_update",
-                "payload": {
-                    "detail": "Новый игрок присоединился",
-                    "shape_id": shape.id,
-                }
+                "payload": {"detail": "Новый игрок присоединился", "shape_id": shape.id}
             }
         )
+        
         async_to_sync(channel_layer.group_send)(
             f"map_{session.map.id}",
             {
                 "type": "broadcast_event",
                 "action": "turn_order_update",
-                "payload": {
-                    "new_shape_id": shape.id,
-                }
+                "payload": {"new_shape_id": shape.id}
             }
         )
-                # Отправляем фигуру в карту мастера
+        
         async_to_sync(channel_layer.group_send)(
             f"map_{session.map.id}",
             {
                 "type": "broadcast_event",
                 "action": "create",
-                "payload": ShapeSerializer(shape).data,
+                "payload": ShapeSerializer(shape).data
             }
         )
 
@@ -509,23 +538,67 @@ class JoinSessionWithShapeView(APIView):
         }, status=200)
 
 
-# ==================== Other Views ====================
-class PointOfInterestEditing(APIView):
+class SessionPlayersView(APIView):
+    """Получение списка игроков в сессии"""
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, pk):
-        map_instance = get_object_or_404(Map, pk=pk, user=request.user)
-        data = {**request.data, "map": map_instance.id}
+    def get(self, request, session_id):
+        session = get_object_or_404(GameSession, id=session_id)
+        players = PlayerInSession.objects.filter(session=session).select_related('user', 'character')
 
-        serializer = PointOfInterestSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        data = []
+        for player in players:
+            data.append({
+                'username': player.user.username,
+                'character': ShapeSerializer(player.character).data
+            })
+
+        return Response(data)
 
 
-# ==================== Spell Views ====================
+# ==================== ТОЧКИ ИНТЕРЕСА (POI) ====================
+
+class PointOfInterestViewSet(viewsets.ModelViewSet):
+    queryset = MapPoint.objects.all()
+    serializer_class = MapPointSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return MapPoint.objects.filter(map__user=self.request.user)
+
+    def perform_create(self, serializer):
+        map_id = self.request.data.get('map')
+        map_instance = get_object_or_404(Map, pk=map_id, user=self.request.user)
+        serializer.save(map=map_instance)
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+
+        # Обновление порядка
+        images_order = self.request.data.get('images_order')
+        if images_order:
+            for img in json.loads(images_order):
+                MapPointImage.objects.filter(id=img['id'], point=instance).update(order=img['order'])
+
+        # Удаление
+        deleted = self.request.data.get('deleted_images')
+        if deleted:
+            MapPointImage.objects.filter(id__in=json.loads(deleted), point=instance).delete()
+
+        # Новые изображения
+        for file in self.request.FILES.getlist('new_images'):
+            MapPointImage.objects.create(point=instance, image=file, order=instance.images.count())
+
+        # Главное изображение
+        if 'image' in self.request.FILES:
+            instance.image = self.request.FILES['image']
+            instance.save()
+    
+
+# ==================== ЗАКЛИНАНИЯ (SPELLS) ====================
+
 class SpellCreateView(generics.CreateAPIView):
+    """Создание заклинаний"""
     queryset = Spell.objects.all()
     serializer_class = SpellSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -535,6 +608,7 @@ class SpellCreateView(generics.CreateAPIView):
 
 
 class SpellUpdateView(generics.UpdateAPIView):
+    """Обновление заклинаний"""
     queryset = Spell.objects.all()
     serializer_class = SpellSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -542,12 +616,14 @@ class SpellUpdateView(generics.UpdateAPIView):
 
 
 class SpellDeleteView(generics.DestroyAPIView):
+    """Удаление заклинаний"""
     queryset = Spell.objects.all()
     serializer_class = SpellSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 
 class SpellByCreatorView(APIView):
+    """Получение заклинаний по создателю"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, creator_id):
@@ -556,22 +632,24 @@ class SpellByCreatorView(APIView):
         return Response(serializer.data)
 
 
-# ==================== Character Class Views ====================
+# ==================== КЛАССЫ ПЕРСОНАЖЕЙ ====================
+
 class ClassCreateView(generics.CreateAPIView):
+    """Создание классов персонажей"""
     queryset = CharacterClass.objects.all()
     serializer_class = CharacterClassSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        if not serializer.is_valid():
-            print("❌ Ошибки сериализации:", serializer.errors)
-            return Response(serializer.errors, status=400)
-        serializer.save(creator=self.request.user)
-        return Response(serializer.data, status=201)
+        if serializer.is_valid():
+            serializer.save(creator=self.request.user)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
 
 
 class ClassUpdateView(generics.UpdateAPIView):
+    """Обновление классов персонажей"""
     queryset = CharacterClass.objects.all()
     serializer_class = CharacterClassSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -579,12 +657,14 @@ class ClassUpdateView(generics.UpdateAPIView):
 
 
 class ClassDeleteView(generics.DestroyAPIView):
+    """Удаление классов персонажей"""
     queryset = CharacterClass.objects.all()
     serializer_class = CharacterClassSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 
 class ClassByCreatorView(APIView):
+    """Получение классов по создателю"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, creator_id):
@@ -593,24 +673,24 @@ class ClassByCreatorView(APIView):
         return Response(serializer.data)
 
 
-# ==================== Race Views ====================
+# ==================== РАСЫ (RACES) ====================
 
 class RaceCreateView(generics.CreateAPIView):
+    """Создание рас"""
     queryset = Race.objects.all()
     serializer_class = RaceSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        if not serializer.is_valid():
-            print("❌ Ошибки сериализации:", serializer.errors)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        serializer.save(creator=self.request.user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        if serializer.is_valid():
+            serializer.save(creator=self.request.user)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
 
 
 class RaceUpdateView(generics.UpdateAPIView):
+    """Обновление рас"""
     queryset = Race.objects.all()
     serializer_class = RaceSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -618,12 +698,14 @@ class RaceUpdateView(generics.UpdateAPIView):
 
 
 class RaceDeleteView(generics.DestroyAPIView):
+    """Удаление рас"""
     queryset = Race.objects.all()
     serializer_class = RaceSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 
 class RaceByCreatorView(APIView):
+    """Получение рас по создателю"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, creator_id):
@@ -632,23 +714,24 @@ class RaceByCreatorView(APIView):
         return Response(serializer.data)
 
 
-# ==================== Item Views ====================
+# ==================== ПРЕДМЕТЫ (ITEMS) ====================
+
 class ItemCreateView(generics.CreateAPIView):
+    """Создание предметов"""
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        if not serializer.is_valid():
-            print("❌ Ошибки сериализации:", serializer.errors)
-            return Response(serializer.errors, status=400)
-        serializer.save(creator=self.request.user)
-        return Response(serializer.data, status=201)
-
+        if serializer.is_valid():
+            serializer.save(creator=self.request.user)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
 
 
 class ItemUpdateView(generics.UpdateAPIView):
+    """Обновление предметов"""
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -656,11 +739,14 @@ class ItemUpdateView(generics.UpdateAPIView):
 
 
 class ItemDeleteView(generics.DestroyAPIView):
+    """Удаление предметов"""
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+
 class ItemByCreatorView(APIView):
+    """Получение предметов по создателю"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, creator_id):
@@ -674,21 +760,56 @@ class ItemByCreatorView(APIView):
         return Response(serializer.data)
 
 
+class ItemByMapView(APIView):
+    """Получение предметов по карте"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, map_id):
+        """
+        Получает все предметы, связанные с указанной картой
+        
+        Args:
+            map_id (int): ID карты для фильтрации предметов
+            
+        Returns:
+            Response: Список предметов в формате JSON или сообщение об ошибке
+        """
+        try:
+            # Получаем предметы, связанные с картой
+            items = Item.objects.filter(map__id=map_id)
+            
+            # Сериализуем данные
+            serializer = ItemSerializer(items, many=True)
+            
+            # Возвращаем успешный ответ
+            return Response(serializer.data)
+        
+        except Exception as e:
+            # Обработка ошибок с возвратом понятного сообщения
+            return Response(
+                {'error': f'Ошибка при получении предметов: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+# ==================== АТАКИ (ATTACKS) ====================
+
 class AttackCreateView(generics.CreateAPIView):
+    """Создание атак"""
     queryset = Attack.objects.all()
     serializer_class = AttackSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        if not serializer.is_valid():
-            print("❌ Ошибки сериализации:", serializer.errors)
-            return Response(serializer.errors, status=400)
-        serializer.save(creator=self.request.user)  # Явно передаём creator
-        return Response(serializer.data, status=201)
+        if serializer.is_valid():
+            serializer.save(creator=self.request.user)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
 
 
 class AttackUpdateView(generics.UpdateAPIView):
+    """Обновление атак"""
     queryset = Attack.objects.all()
     serializer_class = AttackSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -696,19 +817,21 @@ class AttackUpdateView(generics.UpdateAPIView):
 
 
 class AttackDeleteView(generics.DestroyAPIView):
+    """Удаление атак"""
     queryset = Attack.objects.all()
     serializer_class = AttackSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 
 class AttackByOwnerView(APIView):
+    """Получение атак по владельцу"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, creator_id):
         try:
             creator_id = int(creator_id)
         except (ValueError, TypeError):
-            return Response({"detail": "Invalid creator_id"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Invalid creator_id"}, status=400)
 
         attacks = Attack.objects.filter(creator_id=creator_id)
         serializer = AttackSerializer(attacks, many=True)
@@ -716,23 +839,99 @@ class AttackByOwnerView(APIView):
 
 
 
-class SessionPlayersView(APIView):
-    permission_classes = [IsAuthenticated]
 
-    def get(self, request, session_id):
-        print(f"📥 Запрос на получение игроков сессии: {session_id}")
-        session = get_object_or_404(GameSession, id=session_id)
-        players = PlayerInSession.objects.filter(session=session).select_related('user', 'character')
 
-        print(f"✅ Найдено игроков: {players.count()}")
+class ItemInstanceViewSet(viewsets.ModelViewSet):
+    queryset = ItemInstance.objects.all()
+    serializer_class = ItemInstanceSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-        data = []
-        for player in players:
-            print(f"🎮 Игрок: {player.user.username} — Персонаж: {player.character.name}")
-            data.append({
-                'username': player.user.username,
-                'character': ShapeSerializer(player.character).data
-            })
+    def perform_create(self, serializer):
+        item_instance = serializer.save()
 
-        print(f"✅ Отправляем список игроков: {data}")
-        return Response(data)
+        # WebSocket событие
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"map_{item_instance.map_id}",
+            {
+                "type": "broadcast_event",
+                "action": "item_create",
+                "payload": ItemInstanceSerializer(item_instance).data,
+            }
+        )
+
+    def perform_update(self, serializer):
+        item_instance = serializer.save()
+
+        # WebSocket событие
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"map_{item_instance.map_id}",
+            {
+                "type": "broadcast_event",
+                "action": "item_update",
+                "payload": ItemInstanceSerializer(item_instance).data,
+            }
+        )
+
+    def perform_destroy(self, instance):
+        map_id = instance.map_id
+        item_id = instance.id
+        instance.delete()
+
+        # WebSocket событие
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"map_{map_id}",
+            {
+                "type": "broadcast_event",
+                "action": "item_delete",
+                "payload": {"id": item_id},
+            }
+        )
+
+
+class ItemInstanceByMapView(APIView):
+    """Получение всех экземпляров предметов на карте"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, map_id):
+        try:
+            map_instance = Map.objects.get(pk=map_id)
+
+            # Проверка доступа
+            if not (map_instance.user == request.user or
+                    PlayerInSession.objects.filter(session__map=map_instance, user=request.user).exists()):
+                return Response({"detail": "Нет доступа к этой карте"}, status=403)
+
+            items = ItemInstance.objects.filter(map=map_instance)
+            serializer = ItemInstanceSerializer(items, many=True)
+            return Response(serializer.data)
+
+        except Map.DoesNotExist:
+            return Response({"detail": "Карта не найдена"}, status=404)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
+
+
+class ItemInstanceByRoomView(APIView):
+    """Получение всех экземпляров предметов в конкретной комнате"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, map_id, room_id):
+        try:
+            map_instance = Map.objects.get(pk=map_id)
+            room_instance = Room.objects.get(pk=room_id)
+
+            # Проверка доступа
+            if map_instance.user != request.user:
+                return Response({"detail": "Нет доступа к этой карте"}, status=403)
+
+            items = ItemInstance.objects.filter(map=map_instance, room=room_instance)
+            serializer = ItemInstanceSerializer(items, many=True)
+            return Response(serializer.data)
+
+        except (Map.DoesNotExist, Room.DoesNotExist):
+            return Response({"detail": "Карта или комната не найдены"}, status=404)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)

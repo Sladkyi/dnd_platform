@@ -10,6 +10,17 @@ import {
   createSessionURL,
   fetchSessionPlayers,
   fetchShapes,
+  updateItemPosition,
+  fetchItems,
+  createItemInstance,
+  fetchItemInstances,
+  fetchPointsOfInterest,
+  createPointOfInterest,
+  deletePointOfInterest,
+  getPlayerEntities,
+  cloneShape,
+  createShapeFromImage,
+  fetchItemInstancesByRoom,
 } from '../services/MapService';
 import { useSocket } from '../context/SocketContext';
 import MapStage from './MapStage';
@@ -23,6 +34,10 @@ import useMapSubscription from '../hooks/useMapSubscription';
 import { createIncomingMessageHandler } from '../websocket/handleIncomingMessage';
 import SessionInfo from './SessionInfo';
 import ToolbarContent from './MasterToolbar/ToolbarContent';
+import RoomModal from './MasterToolbar/RoomModal';
+import PointOfInterestModal from './PointOfInterestModal';
+import { useShapeImages } from '../hooks/useShapeImages';
+
 const safeSocketSend = (socket, message) => {
   if (!socket || socket.readyState !== WebSocket.OPEN) {
     console.warn('⚠️ Сокет не готов');
@@ -79,7 +94,13 @@ const useShapeAnimations = (setShapes) => {
       if (animationsRef.current[shapeId]) {
         cancelAnimationFrame(animationsRef.current[shapeId]);
       }
-
+      setShapes((prev) => {
+        const invalids = prev.filter((s) => !validateNumber(s.id));
+        if (invalids.length) {
+          console.warn('⚠️ Невалидные фигуры после загрузки:', invalids);
+        }
+        return prev;
+      });
       setShapes((prevShapes) => {
         const shape = prevShapes.find((s) => s.id === shapeId);
         if (!shape) return prevShapes;
@@ -137,7 +158,9 @@ const EditMap = () => {
   const movementLocks = useRef({});
   const [turnOrder, setTurnOrder] = useState([]);
   const [currentTurnShapeId, setCurrentTurnShapeId] = useState(null);
+  const [images, setImages] = useState({});
   // Состояния
+  const [items, setItems] = useState([]);
   const [mapData, setMapData] = useState(null);
   const [shapes, setShapes] = useState([]);
   const [pointsOfInterest, setPointsOfInterest] = useState([]);
@@ -157,8 +180,19 @@ const EditMap = () => {
       ? storedSessionId
       : null;
   });
+  const [playerShapes, setPlayerShapes] = useState([]);
+  const [selectedPOI, setSelectedPOI] = useState(null);
+  const [editingPOI, setEditingPOI] = useState(null);
+  const [isPOIModalOpen, setIsPOIModalOpen] = useState(false);
+  const [selectedItemInstance, setSelectedItemInstance] = useState(null);
+  const [itemInstances, setItemInstances] = useState([]);
+  const [isItemLibraryOpen, setIsItemLibraryOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [allShapes, setAllShapes] = useState([]);
+  const [allItems, setAllItems] = useState([]);
+  const [allPOIs, setAllPOIs] = useState([]);
   const backgroundUrl =
     currentRoom?.background_image || mainRoom?.background_image || '';
   // Валидация параметров URL
@@ -174,65 +208,117 @@ const EditMap = () => {
   }, [mapId, profileId, navigate]);
 
   const animateShape = useShapeAnimations(setShapes);
-
-  // Загрузка данных карты
   useEffect(() => {
-    if (!mapId) return;
+    if (activeTab === 'shapes' && profileId) {
+      console.log(profileId);
+      getMasterShapes(profileId);
+    }
+  }, [activeTab, profileId]);
+  // Загрузка данных карты
+  const filterByRoom = (arr, roomId) =>
+    arr.filter((el) => el.room === roomId || (roomId === 0 && !el.room));
 
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const loadMapData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const [mapRes, roomsRes, shapesRes] = await Promise.all([
-          fetchMap(mapId),
-          fetchRooms(mapId),
-          fetchShapes(mapId),
-        ]);
+      console.log('Загрузка данных карты, комнат и фигур...');
 
-        // Проверка ответов сервера
-        if (!mapRes.data || !roomsRes.data || !shapesRes.data) {
-          throw new Error('Неполные данные с сервера');
-        }
+      const [mapRes, roomsRes, shapesRes] = await Promise.all([
+        fetchMap(mapId),
+        fetchRooms(mapId),
+        fetchShapes(mapId),
+      ]);
 
-        setMapData(mapRes.data);
-        setPointsOfInterest(
-          Array.isArray(mapRes.data.pointsOfInterest)
-            ? mapRes.data.pointsOfInterest
-            : []
-        );
-
-        setRooms(Array.isArray(roomsRes.data) ? roomsRes.data : []);
-        setShapes(Array.isArray(shapesRes.data) ? shapesRes.data : []);
-
-        if (mapRes.data.full_card_map_image) {
-          setMainRoom({
-            id: 0,
-            name: 'Главная карта',
-            background_image: mapRes.data.full_card_map_image,
-          });
-        }
-
-        if (mapRes.data.last_opened_room_id) {
-          const roomRes = await fetchRoom(mapRes.data.last_opened_room_id);
-          if (roomRes.data) {
-            setCurrentRoom(roomRes.data);
-          }
-        }
-      } catch (err) {
-        const errorMsg =
-          err.response?.data?.message ||
-          err.message ||
-          'Ошибка загрузки данных карты';
-        setError(errorMsg);
-        console.error('Ошибка загрузки данных:', err);
-      } finally {
-        setLoading(false);
+      if (!mapRes.data || !roomsRes.data || !shapesRes.data) {
+        throw new Error('Неполные данные с сервера');
       }
-    };
 
-    loadData();
-  }, [mapId]);
+      const rooms = Array.isArray(roomsRes.data) ? roomsRes.data : [];
+      const mapInfo = mapRes.data;
+      const allShapesRaw = shapesRes.data || [];
+
+      setMapData(mapInfo);
+      setRooms(rooms);
+      setAllShapes(allShapesRaw);
+
+      if (mapInfo.full_card_map_image) {
+        setMainRoom({
+          id: 0,
+          name: 'Главная карта',
+          background_image: mapInfo.full_card_map_image,
+        });
+      }
+
+      let activeRoom = null;
+      if (mapInfo.last_opened_room_id) {
+        const roomRes = await fetchRoom(mapInfo.last_opened_room_id);
+        if (roomRes?.data) {
+          activeRoom = roomRes.data;
+          setCurrentRoom(activeRoom);
+        }
+      }
+
+      const roomId = activeRoom?.id ?? 0;
+
+      console.log('Загрузка предметов и POI для всей карты...');
+
+      const [itemInstancesRes, poiRes] = await Promise.all([
+        fetchItemInstances(mapId),
+        fetchPointsOfInterest(mapId),
+      ]);
+
+      const allItemsRaw = itemInstancesRes.data || [];
+      const allPOIsRaw = poiRes.data || [];
+
+      setAllItems(allItemsRaw);
+      setAllPOIs(allPOIsRaw);
+
+      setShapes(filterByRoom(allShapesRaw, roomId));
+      setItems(filterByRoom(allItemsRaw, roomId));
+      setPointsOfInterest(filterByRoom(allPOIsRaw, roomId));
+
+      console.log('✅ Данные карты загружены полностью');
+    } catch (err) {
+      const errorMsg =
+        err.response?.data?.message ||
+        err.message ||
+        'Ошибка загрузки данных карты';
+      setError(errorMsg);
+      console.error('Ошибка загрузки данных:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    mapId,
+    setLoading,
+    setError,
+    setMapData,
+    setRooms,
+    setMainRoom,
+    setCurrentRoom,
+    setAllShapes,
+    setShapes,
+    setAllItems,
+    setItems,
+    setAllPOIs,
+    setPointsOfInterest,
+  ]);
+  useEffect(() => {
+    if (mapId) {
+      loadMapData();
+    }
+  }, [mapId, loadMapData]);
+  useEffect(() => {
+    const invalids = shapes.filter((s) => !validateNumber(s.id));
+    if (invalids.length) {
+      console.warn(
+        '❌ В списке shapes есть фигуры без валидного ID:',
+        invalids
+      );
+    }
+  }, [shapes]);
   useEffect(() => {
     if (!socket || !isSocketReady || !mapId || !shapes.length) return;
 
@@ -268,7 +354,9 @@ const EditMap = () => {
 
     loadPlayers();
   }, [sessionId]);
-
+  useEffect(() => {
+    currentRoomRef.current = currentRoom;
+  }, [currentRoom]);
   // Обработчик входящих сообщений WebSocket
   const [isHandlerReady, setIsHandlerReady] = useState(false);
   const handleIncomingMessageRef = useRef();
@@ -287,9 +375,15 @@ const EditMap = () => {
       positionRef,
       sessionId,
       mapId: parseInt(mapId, 10),
-      movementLocks, // Передаёшь сюда
+      movementLocks,
       setTurnOrder,
       setCurrentTurnShapeId,
+      setRooms,
+      setCurrentRoom,
+      setItems,
+      setAllItems,
+      setAllShapes,
+      currentRoomRef,
     });
 
     setIsHandlerReady(true);
@@ -309,36 +403,42 @@ const EditMap = () => {
 
   const handleShapeDragWrapper = useCallback(
     (updatedShape) => {
+      // 🔍 Валидация входных данных
       if (
         !validateObject(updatedShape) ||
-        (typeof updatedShape.id !== 'string' &&
-          typeof updatedShape.id !== 'number') ||
-        typeof updatedShape.x !== 'number' ||
-        typeof updatedShape.y !== 'number'
+        typeof updatedShape.id !== 'number' ||
+        !validateNumber(updatedShape.x) ||
+        !validateNumber(updatedShape.y)
       ) {
-        console.warn('Invalid shape data in drag handler', updatedShape);
+        console.warn(
+          '🚫 Невалидные данные для перетаскивания фигуры:',
+          updatedShape
+        );
         return;
       }
 
-      // Блокируем обновление по сокету на 200ms для этой фигуры
-      lockShape(updatedShape.id);
+      const shapeId = updatedShape.id;
 
-      // Оптимизированное обновление локального состояния
-      setShapes((prev) => {
-        if (!Array.isArray(prev)) return prev;
-        return prev.map((shape) =>
-          shape.id === updatedShape.id
-            ? { ...shape, x: updatedShape.x, y: updatedShape.y }
-            : shape
-        );
-      });
+      // 🔐 Блокировка обновления фигуры
+      lockShape(shapeId);
 
-      // Отправка через WebSocket
-      if (isSocketReady && socket && socket.readyState === WebSocket.OPEN) {
+      // ⚡ Обновление локального состояния
+      setShapes((prev) =>
+        Array.isArray(prev)
+          ? prev.map((shape) =>
+              shape.id === shapeId
+                ? { ...shape, x: updatedShape.x, y: updatedShape.y }
+                : shape
+            )
+          : prev
+      );
+
+      // 📡 Отправка обновления по WebSocket
+      if (isSocketReady && socket?.readyState === WebSocket.OPEN) {
         const payload = {
           action: 'move',
           payload: {
-            id: Number(updatedShape.id),
+            id: shapeId,
             x: updatedShape.x,
             y: updatedShape.y,
             map_id: Number(mapId),
@@ -348,8 +448,10 @@ const EditMap = () => {
         try {
           safeSocketSend(socket, payload);
         } catch (err) {
-          console.error('Ошибка отправки через WebSocket:', err);
+          console.error('❌ Ошибка отправки движения через WebSocket:', err);
         }
+      } else {
+        console.warn('⚠️ Сокет не готов для отправки движения');
       }
     },
     [isSocketReady, socket, mapId, setShapes]
@@ -374,15 +476,59 @@ const EditMap = () => {
           throw new Error(`Комната ${room.id} не найдена`);
         }
 
+        // 👉 Обновляем локально
         setCurrentRoom(room);
+        setShapes(filterByRoom(allShapes, room.id));
+        console.log(
+          '🔄 currentRoomRef.current.id =',
+          currentRoomRef.current?.id
+        );
+        console.log('🆕 newShape.room =', newShape.room);
+        setItems(
+          allItems.filter(
+            (i) => i.room === room.id || (room.id === 0 && !i.room)
+          )
+        );
+        setPointsOfInterest(
+          allPOIs.filter(
+            (p) => p.room === room.id || (room.id === 0 && !p.room)
+          )
+        );
+
+        // 👉 Сохраняем на сервере
         await updateRoomId(mapId, room.id);
+
+        // 👉 Отправляем через WebSocket
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(
+            JSON.stringify({
+              action: 'switch_room',
+              payload: {
+                map_id: mapId,
+                room_id: room.id,
+                background_image: room.background_image || null,
+              },
+            })
+          );
+
+          console.log('📤 Отправлено переключение комнаты:', room);
+        }
       } catch (err) {
         console.error('Ошибка обновления комнаты:', err);
         alert(`Ошибка: ${err.message}`);
       }
     },
-    [mapId, rooms]
+    [mapId, rooms, socket]
   );
+  useEffect(() => {
+    if (!currentRoom) return;
+    const roomId = currentRoom.id;
+
+    const filtered = allItems.filter(
+      (i) => i.room === roomId || (roomId === 0 && !i.room)
+    );
+    setItems(filtered);
+  }, [currentRoom, allItems]);
   const handleNextTurn = useCallback(() => {
     if (!socket || socket.readyState !== WebSocket.OPEN) return;
 
@@ -395,26 +541,31 @@ const EditMap = () => {
 
     console.log('🔄 Запрос на следующий ход отправлен');
   }, [socket, mapId]);
-  const handleAddRoom = useCallback(async () => {
-    const name = prompt('Название новой комнаты:');
-    if (!name || name.trim() === '') {
-      alert('Название комнаты не может быть пустым');
-      return;
+
+  const getMasterShapes = async (profileId) => {
+    try {
+      const { data } = await getPlayerEntities(profileId);
+      console.log('👤 Мастерские фигуры:', data);
+      return setPlayerShapes(data);
+    } catch (error) {
+      console.error('❌ Ошибка при получении фигур мастера:', error);
+      return [];
     }
+  };
+
+  const handleAddRoom = async (formData) => {
+    console.log('formData instanceof FormData:', formData instanceof FormData); // ✅ Проверка
 
     try {
-      const { data } = await createRoom(mapId, { name: name.trim() });
+      const { data } = await createRoom(mapId, formData);
       if (data && data.id) {
         setRooms((prev) => [...prev, data]);
-      } else {
-        throw new Error('Неверный ответ сервера при создании комнаты');
       }
     } catch (err) {
       console.error('Ошибка создания комнаты:', err);
       alert(`Ошибка: ${err.message}`);
     }
-  }, [mapId]);
-
+  };
   // Обработчики сессии
   const handleInvitePlayers = useCallback(async () => {
     try {
@@ -457,7 +608,183 @@ const EditMap = () => {
   //     )}
   //   </div>
   // );
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    console.log('Объект над DOM-обёрткой карты');
+  };
+  const saveItemPosition = async (itemId, x, y) => {
+    try {
+      await updateItemPosition(itemId, x, y);
+      console.log(`Позиция предмета ${itemId} сохранена: x=${x}, y=${y}`);
+      // здесь можешь перезагрузить предметы или сразу добавить item на карту
+    } catch (err) {
+      console.error('Ошибка при сохранении позиции предмета:', err);
+    }
+  };
+  const handleDeletePOI = async (poiId) => {
+    try {
+      await deletePointOfInterest(poiId);
+      setPointsOfInterest((prev) => prev.filter((p) => p.id !== poiId));
+      setSelectedPOI(null);
+      console.log(`✅ POI ${poiId} успешно удалён`);
+    } catch (err) {
+      console.error('❌ Ошибка при удалении POI:', err);
+      alert('Не удалось удалить точку интереса');
+    }
+  };
+  const handleDrop = async (e) => {
+    e.preventDefault();
 
+    console.log('Drop сработал на DOM-обёртке карты');
+
+    const wrapperRect = e.currentTarget.getBoundingClientRect();
+    const relativeX = e.clientX - wrapperRect.left;
+    const relativeY = e.clientY - wrapperRect.top;
+    const stageX = (relativeX - position.x) / scale;
+    const stageY = (relativeY - position.y) / scale;
+
+    // === 🔥 Проверка: если файл (изображение) ===
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const imageFile = files[0];
+      if (imageFile.type.startsWith('image/')) {
+        await handleCreateShapeFromImage(imageFile, stageX, stageY);
+        return;
+      }
+    }
+
+    // === 🧩 Иначе — обычные json-данные ===
+    const droppedData = e.dataTransfer.getData('application/json');
+    if (!droppedData) {
+      console.warn('Нет данных в dataTransfer');
+      return;
+    }
+
+    let droppedObject;
+    try {
+      droppedObject = JSON.parse(droppedData);
+    } catch (err) {
+      console.warn('Ошибка парсинга JSON в droppedData', droppedData);
+      return;
+    }
+
+    if (!droppedObject.type) {
+      console.warn('Тип объекта не указан в droppedData', droppedObject);
+      return;
+    }
+
+    console.log(
+      `Drop объект типа ${droppedObject.type} на x=${stageX}, y=${stageY}`
+    );
+
+    if (droppedObject.type === 'item') {
+      await handleDropItem(droppedObject, stageX, stageY);
+    } else if (droppedObject.type === 'poi') {
+      await handleDropPOI(droppedObject, stageX, stageY);
+    } else if (droppedObject.type === 'shape') {
+      if (!droppedObject?.id || isNaN(droppedObject.id)) {
+        console.warn(
+          '🚫 Попытка переместить фигуру без корректного ID:',
+          droppedObject
+        );
+        return;
+      }
+
+      await handleDropShape(droppedObject, stageX, stageY);
+    } else {
+      console.warn('Неизвестный тип объекта:', droppedObject.type);
+    }
+  };
+  const handleDropShape = async (shape, x, y) => {
+    try {
+      const res = await cloneShape(
+        shape.id,
+        mapId,
+        x,
+        y,
+        currentRoom?.id || null
+      );
+
+      const createdClone = res.data;
+
+      if (!createdClone?.id || typeof createdClone.id !== 'number') {
+        console.warn('❌ Сервер вернул фигуру без валидного ID:', createdClone);
+        return;
+      }
+
+      setShapes((prev) => {
+        const filtered = prev.filter(
+          (s) => validateNumber(s.id) && s.id !== createdClone.id
+        );
+        return [...filtered, createdClone];
+      });
+
+      console.log('✅ Клон фигуры создан и добавлен:', createdClone);
+    } catch (err) {
+      console.error('❌ Ошибка при создании клона фигуры:', err);
+    }
+  };
+  const currentRoomRef = useRef(null);
+
+  useEffect(() => {
+    currentRoomRef.current = currentRoom;
+  }, [currentRoom]);
+  const handleDropItem = async (item, x, y) => {
+    try {
+      const res = await createItemInstance({
+        item: item.id,
+        map: mapId,
+        room: currentRoom?.id ?? 0, // 👈 безопасно
+        x,
+        y,
+        quantity: 1,
+        is_hidden: false,
+      });
+
+      console.log('Экземпляр предмета успешно создан:', res.data);
+    } catch (err) {
+      console.error('Ошибка при создании экземпляра предмета:', err);
+    }
+  };
+  const handleDropPOI = async (poiTemplate, x, y) => {
+    try {
+      const res = await createPointOfInterest({
+        ...poiTemplate,
+        x,
+        y,
+        room: currentRoom?.id || null,
+      });
+
+      const createdPOI = res.data;
+
+      setPointsOfInterest((prev) => [...prev, createdPOI]);
+      setEditingPOI(createdPOI); // 👈 открываем редактор
+      setIsPOIModalOpen(true); // 👈 открываем модалку
+    } catch (err) {
+      console.error('Ошибка создания POI:', err.response?.data || err.message);
+    }
+  };
+  const handleCreateShapeFromImage = async (file, x, y) => {
+    try {
+      const response = await createShapeFromImage(
+        file,
+        x,
+        y,
+        mapId,
+        profileId,
+        currentRoom?.id ?? 0 // 👈 добавлено
+      );
+      console.log('✅ Фигура создана:', response.data);
+    } catch (err) {
+      console.error('❌ Ошибка при создании фигуры:', err);
+      alert('Не удалось создать фигуру из изображения');
+    }
+  };
+
+  const handleEditPOI = (poi) => {
+    setEditingPOI(poi);
+    setIsPOIModalOpen(true);
+  };
   // Обработчик открытия редактора
   const handleOpenEditor = useCallback((shape) => {
     if (!validateObject(shape) || !validateNumber(shape.id)) {
@@ -499,22 +826,42 @@ const EditMap = () => {
           currentTurnShapeId={currentTurnShapeId}
         />
       )}
-      <MapStage
-        scale={scale}
-        position={position}
-        setPosition={setPosition}
-        setScale={setScale}
-        shapes={shapes}
-        points={pointsOfInterest}
-        room={currentRoom}
-        mainRoom={mainRoom}
-        onDragShape={handleShapeDragWrapper}
-        onDoubleClickShape={handleOpenEditor}
-        selectedShape={selectedShape}
-        setSelectedShape={setSelectedShape}
-        backgroundUrl={backgroundUrl} // 👈 Добавь
-      />
-
+      <div
+        className="map-stage-wrapper"
+        onDragOver={(e) => handleDragOver(e)}
+        onDrop={(e) => handleDrop(e)}
+        style={{ width: '100%', height: '100%' }}
+      >
+        <MapStage
+          scale={scale}
+          position={position}
+          setPosition={setPosition}
+          itemInstances={items}
+          setScale={setScale}
+          shapes={shapes}
+          points={pointsOfInterest}
+          room={currentRoom}
+          mainRoom={mainRoom}
+          onDragShape={handleShapeDragWrapper}
+          onDoubleClickShape={handleOpenEditor}
+          selectedShape={selectedShape}
+          setSelectedShape={setSelectedShape}
+          backgroundUrl={backgroundUrl}
+          onItemClick={(item) => {
+            setSelectedItemInstance(item);
+            setActiveTab('item');
+          }}
+          onPointClick={(poi) => {
+            setSelectedPOI(poi);
+            setActiveTab('poi_manage');
+          }}
+          onSelectShape={(shape) => {
+            setSelectedShape(shape);
+            setActiveTab('shape'); // 👈 это нужно!
+          }}
+          setActiveTab={setActiveTab} // ← ОБЯЗАТЕЛЬНО!
+        />
+      </div>
       {roomsVisible && (
         <RoomList
           rooms={rooms}
@@ -523,26 +870,81 @@ const EditMap = () => {
           onSelect={handleRoomChange}
         />
       )}
-
-      <MasterToolbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        mapId={mapId}
-        mapTitle={mapData.title || 'Без названия'}
-        onManualEdit={() => selectedShape && setShowEditor(true)}
-        onToggleRooms={() => setRoomsVisible((v) => !v)}
-        onAddRoom={handleAddRoom}
-        onInvitePlayers={handleInvitePlayers}
-        onResetMap={() => {
-          setScale(1);
-          setPosition({ x: 0, y: 0 });
-        }}
-        onEndSession={handleEndSession}
-        onNextTurn={handleNextTurn}
+      <div className="toolBarBox">
+        <MasterToolbar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          mapId={mapId}
+          mapTitle={mapData.title || 'Без названия'}
+          onManualEdit={() => selectedShape && setShowEditor(true)}
+          onToggleRooms={() => setRoomsVisible((v) => !v)}
+          onAddRoom={handleAddRoom}
+          onInvitePlayers={handleInvitePlayers}
+          onResetMap={() => {
+            setScale(1);
+            setPosition({ x: 0, y: 0 });
+          }}
+          onEndSession={handleEndSession}
+          onNextTurn={handleNextTurn}
+          mainRoom={mainRoom}
+        />
+        <ToolbarContent
+          activeTab={activeTab}
+          mapId={mapId}
+          profileId={profileId}
+          currentRoom={currentRoom}
+          handleRoomChange={handleRoomChange}
+          onAddRoomClick={() => setIsModalOpen(true)}
+          onInvitePlayers={handleInvitePlayers}
+          onResetMap={() => {
+            setScale(1);
+            setPosition({ x: 0, y: 0 });
+          }}
+          onNextTurn={handleNextTurn}
+          onEndSession={handleEndSession}
+          selectedItemInstance={selectedItemInstance}
+          clearSelectedItemInstance={() => setSelectedItemInstance(null)}
+          rooms={rooms}
+          mainRoom={mainRoom}
+          playerShapes={playerShapes}
+          selectedPOI={selectedPOI}
+          setSelectedPOI={setSelectedPOI}
+          onDeletePOI={handleDeletePOI}
+          onEditPOI={handleEditPOI}
+          selectedShape={selectedShape} // ✅
+          setSelectedShape={setSelectedShape} // ✅
+          onEditShape={() => setShowEditor(true)} // ✅
+          onDeleteShape={(id) => {
+            // Примитивный вариант удаления фигуры
+            setShapes((prev) => prev.filter((s) => s.id !== id));
+            setSelectedShape(null);
+            // TODO: Добавь fetch-запрос DELETE /api/shapes/:id/ если нужно
+          }}
+        />
+      </div>
+      <RoomModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreate={handleAddRoom} // ✅ КРАСИВО И ЧИСТО
       />
-
+      {isPOIModalOpen && editingPOI && (
+        <PointOfInterestModal
+          poi={editingPOI}
+          onClose={() => {
+            setIsPOIModalOpen(false);
+            setEditingPOI(null);
+          }}
+          onSave={(updatedPOI) => {
+            setPointsOfInterest((prev) =>
+              prev.map((p) => (p.id === updatedPOI.id ? updatedPOI : p))
+            );
+            setIsPOIModalOpen(false);
+            setEditingPOI(null);
+          }}
+        />
+      )}
       <ContextMenu />
-      <ToolbarContent activeTab={activeTab} mapId={mapId} />
+
       {showEditor && selectedShape && (
         <EditingEntity
           isOpen={showEditor}

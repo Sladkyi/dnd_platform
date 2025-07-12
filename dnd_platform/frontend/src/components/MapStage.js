@@ -1,9 +1,10 @@
-// MapStage.jsx
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { Stage, Layer } from 'react-konva';
 import RoomLayer from './RoomLayer';
 import ShapeLayer from './ShapeLayer';
 import PointLayer from './PointLayer';
+import { updateItemPosition } from '../services/MapService';
+import ItemInstanceLayer from './ItemInstanceLayer';
 
 const MapStage = ({
   scale,
@@ -19,7 +20,11 @@ const MapStage = ({
   selectedShape,
   setSelectedShape,
   onSelectRoom,
-  backgroundUrl, // 👈 добавь сюда
+  backgroundUrl,
+  itemInstances,
+  onItemClick,
+  onPointClick,
+  setActiveTab,
 }) => {
   const stageRef = useRef();
   const [isDragging, setIsDragging] = useState(false);
@@ -49,6 +54,52 @@ const MapStage = ({
     setLastMousePos({ x: e.evt.clientX, y: e.evt.clientY });
   };
 
+  const handleDragOver = (e) => {
+    console.log('Объект над картой');
+    e.evt.preventDefault();
+  };
+
+  const handleDrop = (e) => {
+    e.evt.preventDefault();
+
+    console.log('Событие drop сработало');
+
+    const droppedData = e.evt.dataTransfer.getData('application/json');
+    if (!droppedData) {
+      console.warn('Нет данных в dataTransfer');
+      return;
+    }
+
+    const item = JSON.parse(droppedData);
+    console.log('Получен предмет из dataTransfer:', item);
+
+    const stage = stageRef.current;
+    const pointerPosition = stage.getPointerPosition();
+
+    console.log('Позиция мыши в canvas:', pointerPosition);
+
+    const stageX = (pointerPosition.x - position.x) / scale;
+    const stageY = (pointerPosition.y - position.y) / scale;
+
+    console.log(`Координаты на карте: x=${stageX}, y=${stageY}`);
+
+    if (item && item.id) {
+      saveItemPosition(item.id, stageX, stageY);
+    }
+  };
+
+  const saveItemPosition = async (itemId, x, y) => {
+    console.log(
+      `Отправка PATCH запроса для itemId: ${itemId} с координатами x=${x}, y=${y}`
+    );
+    try {
+      await updateItemPosition(itemId, x, y);
+      console.log(`Позиция предмета ${itemId} успешно сохранена`);
+    } catch (err) {
+      console.error('Ошибка при сохранении позиции предмета:', err);
+    }
+  };
+
   const handleMouseUp = () => {
     setIsDragging(false);
     setLastMousePos(null);
@@ -67,18 +118,41 @@ const MapStage = ({
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
+      onDragOver={(e) => handleDragOver(e)}
+      onDrop={(e) => handleDrop(e)}
     >
       <RoomLayer backgroundUrl={backgroundUrl} />
+
+      {/* Обернуть в Layer */}
+      <Layer>
+        <ItemInstanceLayer
+          itemInstances={itemInstances}
+          onItemClick={onItemClick}
+        />
+      </Layer>
+
       <ShapeLayer
         shapes={shapes}
         onDrag={onDragShape}
         onDoubleClickShape={onDoubleClickShape}
         selectedShape={selectedShape}
-        onSelectShape={setSelectedShape}
+        onSelectShape={(shape) => {
+          if (selectedShape?.id === shape.id) {
+            setSelectedShape(null);
+            setActiveTab(null);
+          } else {
+            setSelectedShape(shape);
+            setActiveTab('shape'); // 👈 ключевой момент
+          }
+        }}
         onDragEnd={onDragShape}
       />
 
-      <PointLayer points={points} onSelectRoom={onSelectRoom} />
+      <PointLayer
+        points={points}
+        onSelectRoom={onSelectRoom}
+        onPointClick={onPointClick}
+      />
     </Stage>
   );
 };

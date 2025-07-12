@@ -7,7 +7,7 @@ import useShapeAnimations from '../hooks/useShapeAnimations';
 import useMapSubscription from '../hooks/useMapSubscription';
 import { createIncomingMessageHandler } from '../websocket/handleIncomingMessage';
 import './styles/PlayerAgent.css';
-
+import { fetchItemInstances } from '../services/MapService'; // не забудь подключить
 // Валидационные функции
 const validateNumber = (value) =>
   typeof value === 'number' && !isNaN(value) && isFinite(value);
@@ -44,13 +44,15 @@ const PlayerAgent = ({ shapeId, mapId, scale: initialScale }) => {
   const { socket, isSocketReady } = useSocket();
   const FIXED_DURATION = 400;
   const positionRef = useRef({ x: 0, y: 0 });
-
+  const [items, setItems] = useState([]);
   // Отслеживаем состояние подписки с помощью ref
   const isSubscribedRef = useRef(false);
   const cleanupRef = useRef(() => {});
-
+  const [rooms, setRooms] = useState([]); // 👈 обязательно для списка комнат
   const animateShape = useShapeAnimations(setShapes);
-
+  const visibleItems = items.filter(
+    (item) => !item.is_hidden && !item.is_taken
+  );
   const { setTarget, isMoving } = useMovementEngine({
     speed: 5,
     onUpdate: (newPos) => {
@@ -75,9 +77,10 @@ const PlayerAgent = ({ shapeId, mapId, scale: initialScale }) => {
         setLoading(true);
         setError(null);
 
-        const [mapRes, shapeRes] = await Promise.all([
+        const [mapRes, shapeRes, itemInstancesRes] = await Promise.all([
           fetchMap(mapId),
           fetchShapeById(shapeId),
+          fetchItemInstances(mapId), // 👈 загружаем предметы
         ]);
 
         if (!mapRes?.data || !shapeRes?.data) {
@@ -97,7 +100,7 @@ const PlayerAgent = ({ shapeId, mapId, scale: initialScale }) => {
           setPlayerShape(shapeRes.data);
           positionRef.current = { x: shapeRes.data.x, y: shapeRes.data.y };
           setShapes([shapeRes.data]);
-
+          setItems(itemInstancesRes.data); // 👈 загрузка предметов
           if (mapRes.data.last_opened_room_id) {
             const roomRes = await fetchRoom(mapRes.data.last_opened_room_id);
             if (roomRes?.data) {
@@ -157,6 +160,9 @@ const PlayerAgent = ({ shapeId, mapId, scale: initialScale }) => {
       mapId: parseInt(mapId, 10),
       setTurnOrder,
       setCurrentTurnShapeId,
+      setRooms,
+      setCurrentRoom: setRoom,
+      setItems,
     });
 
     setIsHandlerReady(true);
@@ -326,6 +332,7 @@ const PlayerAgent = ({ shapeId, mapId, scale: initialScale }) => {
       onShapeMoveAndSend={handleShapeMoveAndSend}
       isMoving={isMoving}
       mapData={mapData}
+      itemInstances={visibleItems} // ✅ вот это добавь
     />
   );
 };

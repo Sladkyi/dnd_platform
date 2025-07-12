@@ -1,16 +1,19 @@
 import React from 'react';
-import './styles/ShapeMenu.css';
+import './styles/ShapeMenu.css'; // создай стиль при желании
 
-const ShapeMenu = ({ shape, onClose, onEdit, onDelete }) => {
+const ShapeMenu = ({ shape, onEdit, onDelete, onClose, setShape }) => {
+  if (!shape) return null;
+
   return (
     <div className="shape-menu">
-      <div className="shape-menu-header">{shape.name || 'Без имени'}</div>
-      <div className="shape-menu-buttons">
-        <button onClick={() => onEdit(shape)}>✏ Редактировать</button>
-        <button onClick={() => onDelete(shape.id)}>🗑 Удалить</button>
-        <button className="close-btn" onClick={onClose}>
-          ✖
-        </button>
+      {/* <div className="shape-header">
+        <h3>{shape.name || 'Без имени'}</h3>
+        <button onClick={onClose}>✕</button>
+      </div> */}
+
+      <div className="shape-actions">
+        <button onClick={() => onEdit?.(shape)}>✏️ Редактировать</button>
+        <button onClick={() => onDelete?.(shape.id)}>🗑️ Удалить</button>
       </div>
     </div>
   );

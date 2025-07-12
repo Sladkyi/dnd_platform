@@ -5,7 +5,7 @@ from .views import (
     MapDetailAPIView,
     CreateURLView,
     MapUploadImage,
-    PointOfInterestEditing,
+    # PointOfInterestEditing,
     ShapeDetailAPIView,
     CreateNewRoomView,
     RoomView,
@@ -28,7 +28,7 @@ from .views import (
     RaceCreateView,
     RaceUpdateView,
     RaceDeleteView,
-
+    ItemUpdateView,
     ItemByCreatorView,
     ItemCreateView,
     ItemUpdateView,
@@ -40,23 +40,32 @@ from .views import (
     ShapeCreateView,
     SessionPlayersView,
     ShapeListView,
-    ShapeDetailView
+    ShapeDetailView,
+    ItemByMapView,
+    ItemInstanceViewSet,
+    ItemInstanceByMapView, 
+    ItemInstanceByRoomView, 
+    PointOfInterestViewSet, 
+    ShapeCloneView
 )
 router = DefaultRouter()
 router.register(r'maps' , MapViewSet)
+router.register(r'item-instances', ItemInstanceViewSet)  
+router.register(r'poi', PointOfInterestViewSet, basename='poi')
 
 urlpatterns = [
     path('', include(router.urls)),
     path('shapes/<int:pk>/', ShapeDetailView.as_view(), name='shape-detail'),
+    path('shapes/clone/', ShapeCloneView.as_view(), name='shape-clone'),
     path('maps/<int:map_id>/shapes/', ShapeListView.as_view(), name='shape-list'),
     path('maps/change/<int:pk>/', MapDetailAPIView.as_view(), name='map-detail'),
     path('maps/createURL/<int:pk>/', CreateURLView.as_view(), name='create-url'),
     path('maps/uploadImage/<int:pk>/', MapUploadImage.as_view(), name='map-upload-image'),
-    path('maps/PontOfInterest/<int:pk>/', PointOfInterestEditing.as_view(), name='map-upload-image'),
+    # path('maps/PontOfInterest/<int:pk>/', PointOfInterestEditing.as_view(), name='map-upload-image'),
     path('maps/changePosition/<int:pk>/', ShapeDetailAPIView.as_view(), name='map-change-position'),
     path('maps/changePosition/delete/<int:pk>/', ShapeDetailAPIView.as_view(), name='shape-delete'),
     path('maps/shape/update/<int:pk>/', ShapeDetailAPIView.as_view(), name='shape-update'),
-    path('maps/CreateNewRoom/<int:pk>/', CreateNewRoomView.as_view(), name='upload-map'),
+    path('maps/CreateNewRoom/<int:pk>/', CreateNewRoomView.as_view(), name='create-room'),
     path('maps/GetRooms/<int:pk>/', RoomView.as_view(), name='get-room-list'),
     path('maps/rooms/<int:pk>/', SingleRoomView.as_view(), name='single-room'),
     path('maps/entityEditing/<int:pk>/', EntityEditing.as_view(), name='entity-edidting'),
@@ -65,7 +74,7 @@ urlpatterns = [
     path('spells/create/', SpellCreateView.as_view(), name='spell-create'),
     path('spells/update/<int:pk>/', SpellUpdateView.as_view(), name='spell-update'),
     path('spells/<int:pk>/delete/', SpellDeleteView.as_view(), name='spell-delete'),
-
+    path('items/by-map/<int:map_id>/', ItemByMapView.as_view(), name='items-by-map'),
     # Присоединение по сгенерированной ссылке
     path('maps/join/<uuid:session_id>/', JoinGameView.as_view(), name='join_game'),
 # Классы
@@ -85,6 +94,10 @@ urlpatterns = [
     path('items/create/', ItemCreateView.as_view(), name='item-create'),
     path('items/update/<int:pk>/', ItemUpdateView.as_view(), name='item-update'),
     path('items/<int:pk>/delete/', ItemDeleteView.as_view(), name='item-delete'),
+    path('items/update/<int:pk>/', ItemUpdateView.as_view(), name='update-item'),
+    path('item-instances/by-map/<int:map_id>/', ItemInstanceByMapView.as_view(), name='item-instances-by-map'),
+    path('item-instances/by-map/<int:map_id>/room/<int:room_id>/', ItemInstanceByRoomView.as_view(), name='item-instances-by-room'),
+
 
 
     path('attacks/getByOwner/<int:creator_id>/', AttackByOwnerView.as_view(), name='get-attacks-by-owner'),

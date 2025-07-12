@@ -1,7 +1,8 @@
 import React from 'react';
-import { Stage } from 'react-konva';
+import { Stage, Layer } from 'react-konva';
 import RoomLayer from './RoomLayer';
 import ShapeLayer from './ShapeLayer';
+import ItemInstanceLayer from './ItemInstanceLayer'; // 👈 подключи слой предметов
 import ActionPanel from '../components/ActionPanel/PlayerPanel';
 
 const PlayerView = ({
@@ -15,6 +16,7 @@ const PlayerView = ({
   onShapeMoveAndSend,
   isMoving,
   mapData,
+  itemInstances, // 👈 получили от родителя
 }) => {
   const backgroundUrl =
     room?.background_image || mapData?.full_card_map_image || '';
@@ -55,6 +57,13 @@ const PlayerView = ({
         onWheel={handleWheel}
       >
         <RoomLayer backgroundUrl={backgroundUrl} />
+        <Layer>
+          <ItemInstanceLayer
+            itemInstances={itemInstances}
+            onItemClick={() => {}} // у игрока можно оставить пустым
+          />
+        </Layer>
+
         <ShapeLayer
           shapes={shapes}
           onDragMove={() => {}}

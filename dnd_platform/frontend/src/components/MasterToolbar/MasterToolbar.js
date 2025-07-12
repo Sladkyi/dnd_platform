@@ -1,7 +1,7 @@
 import React from 'react';
 
 // HUD-панель, которая управляет активной вкладкой
-const MasterToolbar = ({ activeTab, setActiveTab }) => {
+const MasterToolbar = ({ activeTab, setActiveTab, profileId }) => {
   const handleTabClick = (tab) => {
     // Если клик по активной вкладке — закрываем панель
     if (activeTab === tab) {
@@ -16,18 +16,24 @@ const MasterToolbar = ({ activeTab, setActiveTab }) => {
     <div className="master-toolbar">
       <div className="toolbar-header">
         <div className="tabs">
-          {['rooms', 'items', 'poi', 'weather', 'players', 'session'].map(
-            (tab) => (
-              <button
-                key={tab}
-                className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
-                onClick={() => handleTabClick(tab)}
-                title={getTabTitle(tab)}
-              >
-                {getTabIcon(tab)}
-              </button>
-            )
-          )}
+          {[
+            'rooms',
+            'items',
+            'poi',
+            'weather',
+            'players',
+            'session',
+            'shapes',
+          ].map((tab) => (
+            <button
+              key={tab}
+              className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
+              onClick={() => handleTabClick(tab)}
+              title={getTabTitle(tab)}
+            >
+              {getTabIcon(tab)}
+            </button>
+          ))}
         </div>
       </div>
     </div>
@@ -43,6 +49,7 @@ const getTabIcon = (tab) => {
     weather: '🌦️',
     players: '🎮',
     session: '⚙️',
+    shapes: '🧙',
   };
   return icons[tab] || '?';
 };
@@ -56,6 +63,7 @@ const getTabTitle = (tab) => {
     weather: 'Атмосфера',
     players: 'Игроки',
     session: 'Сессия',
+    shapes: 'фигуры',
   };
   return titles[tab] || 'Неизвестно';
 };

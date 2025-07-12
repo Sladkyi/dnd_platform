@@ -41,6 +41,7 @@ class MapConsumer(AsyncWebsocketConsumer):
             await self._handle_unsubscribe(payload)
         elif action == "move":
             async with self.move_lock:
+
                 if not self._validate_move_payload(payload):
                     print(f"❌ Invalid move payload: {payload}")
                     await self.send_json({"error": "invalid_payload"})
@@ -79,6 +80,75 @@ class MapConsumer(AsyncWebsocketConsumer):
             await self._init_turn_order(payload)
         elif action == "next_turn":
             await self._next_turn(payload)
+
+
+        elif action == "item_create":
+            map_id = payload.get("map_id")
+            if map_id:
+                await self.channel_layer.group_send(
+                    f"map_{map_id}",
+                    {
+                        "type": "broadcast_event",
+                        "action": "item_create",
+                        "payload": payload.get("item_instance"),
+                    }
+                )
+
+        elif action == "item_update":
+            map_id = payload.get("map_id")
+            if map_id:
+                await self.channel_layer.group_send(
+                    f"map_{map_id}",
+                    {
+                        "type": "broadcast_event",
+                        "action": "item_update",
+                        "payload": payload.get("item_instance"),
+                    }
+                )
+
+        elif action == "item_delete":
+            map_id = payload.get("map_id")
+            if map_id:
+                await self.channel_layer.group_send(
+                    f"map_{map_id}",
+                    {
+                        "type": "broadcast_event",
+                        "action": "item_delete",
+                        "payload": payload.get("item_instance"),
+                    }
+                )
+
+
+        elif action == 'create_room':
+            map_id = payload.get("map_id")  # 🔥 Обязательно
+            await self.channel_layer.group_send(
+                f"map_{map_id}",
+                {
+                    "type": "broadcast_event",
+                    "action": "create_room",
+                    "payload": {"room": payload.get("room")},
+                }
+            )
+
+        elif action == 'switch_room':
+            map_id = payload.get("map_id")  # 🔥 Обязательно
+            await self.channel_layer.group_send(
+                f"map_{map_id}",
+                {
+                    "type": "broadcast_event",
+                    "action": "switch_room",
+                    "payload": {
+                        "room_id": payload.get("room_id"),
+                        "background_image": payload.get("background_image"),
+                    },
+                }
+            )
+
+
+
+
+
+
         else:
             print(f"⚠️ Неизвестное действие: {action}")
             await self.send_json({"error": f"unknown_action: {action}"})
@@ -196,7 +266,7 @@ class MapConsumer(AsyncWebsocketConsumer):
     async def _update_shape_position(self, shape_id, x, y):
         user = self.scope.get("user")
         shape = await self._get_shape(shape_id)
-
+        
         if not shape:
             print(f"❌ Shape not found: {shape_id}")
             return False
