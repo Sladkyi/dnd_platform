@@ -1,0 +1,434 @@
+/* styles/PlayerPanel.css */
+.action-panel {
+    display: flex;
+    height: 10vh;
+    max-height: 80px;
+    min-height: 70px;
+    background: linear-gradient(135deg, #1c1c1e 0%, #2c2c2e 100%);
+    border-radius: 14px;
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    padding: 8px 12px;
+    backdrop-filter: blur(10px);
+    border: 0.5px solid rgba(255, 255, 255, 0.08);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', sans-serif;
+    color: #e5e5ea;
+    font-size: 11px;
+    overflow: hidden;
+}
+
+/* Общие элементы */
+.action-panel>div {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 6px;
+}
+
+.weapon-slot,
+.combat-action,
+.spell-slot,
+.item-slot {
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* Иконки */
+.weapon-icon,
+.action-icon,
+.spell-icon,
+.item-icon {
+    font-size: 20px;
+    text-align: center;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(120, 120, 128, 0.18);
+    box-shadow:
+        inset 0 0.5px 0 rgba(255, 255, 255, 0.1),
+        0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Состояния элементов */
+.active .weapon-icon {
+    background: linear-gradient(135deg, #0a84ff 0%, #0d5fdb 100%);
+    box-shadow: 0 0 10px rgba(10, 132, 255, 0.4);
+}
+
+.disabled .spell-icon {
+    opacity: 0.4;
+    filter: grayscale(80%);
+}
+
+/* Блок оружия */
+.weapons-block {
+    flex: 0 0 12%;
+}
+
+.weapons-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+}
+
+.weapon-slot.active .weapon-icon::after {
+    content: "";
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background: #0a84ff;
+    border-radius: 50%;
+}
+
+/* Блок боевых действий */
+.combat-actions-block {
+    flex: 0 0 15%;
+}
+
+.combat-actions-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.combat-action {
+    opacity: 0.9;
+}
+
+.combat-action:hover {
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+/* Центральный блок */
+.character-block {
+    flex: 0 0 20%;
+    margin: 0 5px;
+}
+
+.character-portrait {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.portrait-frame {
+    position: relative;
+    width: 50px;
+    height: 50px;
+}
+
+.portrait-image {
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    background: #3a3a3c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    overflow: hidden;
+    box-shadow:
+        inset 0 0 0 0.5px rgba(255, 255, 255, 0.08),
+        0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.portrait-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.status-indicators {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    display: flex;
+    gap: 2px;
+}
+
+.status-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1c1c1e;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1.5px #2c2c2e;
+}
+
+.character-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hp-display {
+    display: flex;
+    align-items: baseline;
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.hp-current {
+    font-feature-settings: "tnum";
+}
+
+.hp-max {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.temp-hp {
+    font-size: 9px;
+    background: rgba(255, 204, 0, 0.15);
+    color: #ffcc00;
+    padding: 1px 4px;
+    border-radius: 4px;
+    margin-left: 4px;
+}
+
+.secondary-stats {
+    display: flex;
+    gap: 8px;
+    font-size: 10px;
+    opacity: 0.8;
+}
+
+/* Блок заклинаний/предметов */
+.actions-block {
+    flex: 1;
+    min-width: 0;
+}
+
+.actions-header {
+    text-align: center;
+    font-size: 10px;
+    opacity: 0.7;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+}
+
+.actions-row {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    height: 100%;
+}
+
+.spell-slot,
+.item-slot {
+    position: relative;
+    width: 32px;
+    height: 32px;
+}
+
+.spell-level,
+.spell-uses,
+.item-uses {
+    position: absolute;
+    font-size: 8px;
+    font-weight: 600;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 4px;
+    padding: 1px 3px;
+}
+
+.spell-level {
+    top: -4px;
+    right: -4px;
+}
+
+.spell-uses,
+.item-uses {
+    bottom: -4px;
+    right: -4px;
+}
+
+/* Цвета школ магии */
+.evocation {
+    background: rgba(255, 69, 58, 0.2);
+}
+
+.abjuration {
+    background: rgba(50, 215, 75, 0.2);
+}
+
+.illusion {
+    background: rgba(175, 82, 222, 0.2);
+}
+
+.conjuration {
+    background: rgba(255, 214, 10, 0.2);
+}
+
+.divination {
+    background: rgba(90, 200, 245, 0.2);
+}
+
+.enchantment {
+    background: rgba(255, 159, 10, 0.2);
+}
+
+.necromancy {
+    background: rgba(172, 142, 104, 0.2);
+}
+
+.transmutation {
+    background: rgba(94, 92, 230, 0.2);
+}
+
+.unknown {
+    background: rgba(120, 120, 128, 0.2);
+}
+
+/* Управление страницами */
+.page-controls {
+    flex: 0 0 12%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.reset-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.reset-button {
+    background: rgba(120, 120, 128, 0.18);
+    border: none;
+    border-radius: 6px;
+    color: #e5e5ea;
+    padding: 4px 6px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.reset-button:hover {
+    background: rgba(120, 120, 128, 0.3);
+}
+
+.page-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.page-button {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(120, 120, 128, 0.18);
+    border: none;
+    color: #e5e5ea;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    cursor: pointer;
+}
+
+.page-button.active {
+    background: #0a84ff;
+}
+
+/* Tooltips */
+.weapon-tooltip,
+.action-tooltip,
+.spell-tooltip,
+.item-tooltip {
+    visibility: hidden;
+    position: absolute;
+    z-index: 100;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.weapon-slot:hover .weapon-tooltip,
+.combat-action:hover .action-tooltip,
+.spell-slot:hover .spell-tooltip,
+.item-slot:hover .item-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.tooltip {
+    background: #2c2c2e;
+    color: #f5f5f7;
+    padding: 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    min-width: 160px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+    border: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+.tooltip h4 {
+    margin: 0 0 6px 0;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.tooltip p {
+    margin: 3px 0;
+    line-height: 1.4;
+}
+
+.spell-info-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2px;
+}
+
+.spell-description {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 0.5px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Состояние загрузки */
+.action-panel.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.loading-message {
+    font-size: 12px;
+    opacity: 0.7; }
+        .action-panel {
+            position: fixed;
+            /* добавляем позиционирование */
+            bottom: 0;
+            /* крепим снизу */
+            left: 50%;
+            /* центруем по горизонтали */
+            transform: translateX(-50%);
+            /* точное центрирование */
+            width: 100%;
+            /* полная ширина */
+            max-width: 800px;
+            /* соответствует твоему max-width */
+            height: auto;
+            /* авто-высота по контенту */
+            z-index: 1000;
+            /* поверх остальных элементов */
+        }

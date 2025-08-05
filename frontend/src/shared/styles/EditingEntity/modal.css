@@ -1,0 +1,240 @@
+/* CombatTab.css — macOS Dark Glassmorphism Refined (Less Colhoz, More Class) */
+
+:root {
+    --bg-glass: rgba(28, 28, 30, 0.7);
+    --border-light: rgba(255, 255, 255, 0.08);
+    --text-main: rgba(255, 255, 255, 0.95);
+    --text-secondary: rgba(235, 235, 245, 0.6);
+    --accent: #0A84FF;
+    --health: #FF453A;
+    --defense: #30D158;
+    --initiative: #64D2FF;
+    --attacks: #5E5CE6;
+    --hitdice: #FF9F0A;
+    --states: #BF5AF2;
+  }
+  
+  .combat-tab {
+    padding: 1.2rem;
+    background: linear-gradient(180deg, #1c1c1e 0%, #111114 100%);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    color: var(--text-main);
+    font-size: 0.8rem;
+    border-radius: 20px;
+    box-shadow: 0 4px 40px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+  }
+  
+  .panel {
+    background: var(--bg-glass);
+    backdrop-filter: blur(30px) saturate(200%);
+    -webkit-backdrop-filter: blur(30px) saturate(200%);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 0.85rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    margin-bottom: 1rem;
+  }
+  
+  .section-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.65rem;
+    color: var(--text-main);
+  }
+  
+  .hp-display {
+    position: relative;
+    margin-bottom: 0.65rem;
+  }
+  
+  .hp-numbers {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    font-size: 1.15rem;
+    font-weight: 600;
+  }
+  
+  .hp-bar {
+    height: 22px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-light);
+  }
+  
+  .hp-bar-gradient {
+    background: linear-gradient(90deg, var(--health), rgba(194, 69, 69, 0.1));
+    height: 100%;
+    width: 100%;
+  }
+  
+  .input-label {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .form-input,
+  .dice-macro-input,
+  .attack-name-input,
+  .bonus-input,
+  .damage-input,
+  .attack-description,
+  .actions-textarea {
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 0.45rem 0.6rem;
+    width: 100%;
+    color: var(--text-main);
+    font-size: 0.8rem;
+    transition: all 0.25s ease;
+  }
+  
+  button {
+    cursor: pointer;
+  }
+  
+  .restore-button,
+  .remove-attack-button,
+  .add-attack-button,
+  .use-dice-button,
+  .rest-dice-button,
+  .dice-button,
+  .roll-dice-button,
+  .state-button {
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--border-light);
+    color: var(--text-main);
+    border-radius: 7px;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .restore-button:hover,
+  .remove-attack-button:hover,
+  .add-attack-button:hover,
+  .use-dice-button:hover,
+  .rest-dice-button:hover,
+  .dice-button:hover,
+  .roll-dice-button:hover,
+  .state-button:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+    border-color: var(--accent);
+  }
+  
+  .stat-card {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 0.6rem;
+    text-align: center;
+    color: var(--text-main);
+  }
+  
+  .stat-value {
+    font-size: 1.45rem;
+    font-weight: 600;
+  }
+  
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+  
+  .saving-throw {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    padding: 0.45rem;
+    text-align: center;
+    flex: 1;
+    min-width: 65px;
+  }
+  
+  .saving-ability {
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.2rem;
+  }
+  
+  .saving-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  
+  .attack-item {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 0.6rem;
+    margin-bottom: 0.6rem;
+  }
+  
+  .state-button.active {
+    background: rgba(191, 90, 242, 0.15);
+    border-color: var(--states);
+    color: var(--states);
+    font-weight: 600;
+  }
+  
+  .dice-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.65rem;
+  }
+  
+  .states-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.65rem;
+  }
+  
+  .initiative-display,
+  .hitdice-display {
+    text-align: center;
+  }
+  
+  .initiative-value,
+  .hitdice-value {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--initiative);
+    margin-bottom: 0.3rem;
+  }
+  
+  .initiative-modifier {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+  
+  .modal-footer {
+    background-color: rgba(28, 28, 30, 0.72);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border: none;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-radius: 20px;
+
+  }
+    .modal-dialog.modal-xl.modal-dialog-centered {
+      display: flex;
+      justify-content: center;
+      align-items: center; }

@@ -1,0 +1,34 @@
+
+.entity-editor {
+  --bg-dark-700: #1a1a1a;
+  --bg-dark-800: #121212;
+  --bg-dark-900: #0a0a0a;
+  --border-dark-700: #2a2a2a;
+}
+
+.stat-block {
+  transition: transform 0.2s;
+}
+
+.stat-block:hover {
+  transform: translateY(-2px);
+}
+
+.avatar-upload label {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.avatar-upload:hover .edit-icon {
+  opacity: 1;
+}
+
+.edit-icon {
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+label
+{
+color: black;
+
+}

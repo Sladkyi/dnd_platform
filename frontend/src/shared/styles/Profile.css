@@ -1,0 +1,272 @@
+/* Profile.css — refined macOS 14 style, closer to native */
+
+:root {
+    --bg-main: rgba(28, 28, 30, 0.65);
+    --bg-tile: rgba(44, 44, 46, 0.65);
+    --text-primary: rgba(255, 255, 255, 0.95);
+    --text-secondary: rgba(235, 235, 245, 0.55);
+    --accent: rgba(255, 255, 255, 0.75);
+    --accent-hover: rgba(255, 255, 255, 0.95);
+    --border-light: rgba(255, 255, 255, 0.08);
+    --blur-bg: blur(30px);
+    --radius: 18px;
+    --transition: all 0.2s ease-in-out;
+}
+
+.profile-wrapper {
+    max-width: 1000px;
+    margin: 60px auto;
+    padding: 40px;
+    background: var(--bg-main);
+    border-radius: var(--radius);
+    border: 1px solid var(--border-light);
+    backdrop-filter: var(--blur-bg);
+    -webkit-backdrop-filter: var(--blur-bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.3);
+}
+.card {
+    background-color: black;
+
+}
+
+.creation-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 1.2rem 0;
+    flex-wrap: wrap;
+}
+
+.creation-buttons button {
+    background: var(--panel-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--ui-border-primary);
+    border-radius: 12px;
+    padding: 10px 16px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.creation-buttons button:hover {
+    background: var(--accent);
+    color: white;
+}
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+}
+
+.avatar-block {
+    flex-shrink: 0;
+}
+
+.avatar-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--border-light);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.profile-details {
+    flex: 1;
+    min-width: 200px;
+}
+
+.username {
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    color: var(--text-primary);
+}
+
+.bio {
+    color: var(--text-secondary);
+    margin-bottom: 18px;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.stats {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat span {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.stat label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+.logout {
+    background: transparent;
+    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+    padding: 8px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: var(--transition);
+    font-weight: 500;
+    margin-left: auto;
+}
+
+.logout:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.profile-tabs {
+    display: flex;
+    gap: 10px;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 25px;
+}
+
+.profile-tabs button {
+    background: transparent;
+    border: none;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 10px 10px 0 0;
+    transition: var(--transition);
+}
+
+.profile-tabs button.active {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-primary);
+}
+
+.profile-content {
+    min-height: 240px;
+}
+
+.map-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+.map-tile {
+    background: var(--bg-tile);
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border-light);
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.tile-img img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.tile-info {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tile-info h3 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--text-primary);
+}
+
+.tile-meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+}
+
+.tile-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.tile-actions button {
+    flex: 1;
+    padding: 7px 10px;
+    font-size: 13px;
+    border-radius: 9px;
+    border: 1px solid var(--border-light);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.tile-actions button:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.fab {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    font-size: 26px;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border: 1px solid var(--border-light);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    transition: var(--transition);
+}
+
+.fab:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.05);
+}
+
+@media (max-width: 600px) {
+    .profile-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .logout {
+        margin-top: 20px;
+        margin-left: 0;
+    }
+
+    .stats {
+        justify-content: center;
+    }
+}
