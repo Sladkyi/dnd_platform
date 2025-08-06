@@ -11,7 +11,6 @@ import {
 } from "../../../services/MapService";
 
 import useMapStore from "../store/useMapStore";
-import * as res from "framer-motion/m";
 
 export const initializeEditor = async (mapId, profileId) => {
   const {
@@ -55,7 +54,7 @@ export const initializeEditor = async (mapId, profileId) => {
     setItems(itemsRes.data);
     setPointsOfInterest(poiRes.data);
     setPlayerShapes(playerShapesRes.data);
-    setItemInstances(res.data);
+    setItemInstances(itemsRes.data);
   } catch (err) {
     console.error('Ошибка при инициализации редактора:', err);
     setError('Ошибка при инициализации редактора');

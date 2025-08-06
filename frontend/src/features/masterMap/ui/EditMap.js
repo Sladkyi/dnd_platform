@@ -18,55 +18,56 @@ const EditMap = () => {
   const role = location.state?.role;
   const shapeId = location.state?.shapeId;
 
-  const mapData = useMapStore((s) => s.mapData);
-  const shapes = useMapStore((s) => s.shapes);
-  const items = useMapStore((s) => s.items);
-  const rooms = useMapStore((s) => s.rooms);
-  const mainRoom = useMapStore((s) => s.mainRoom);
-  const currentRoom = useMapStore((s) => s.currentRoom);
-  const pointsOfInterest = useMapStore((s) => s.pointsOfInterest);
-  const players = useMapStore((s) => s.players);
-  const sessionId = useMapStore((s) => s.sessionId);
-  const loading = useMapStore((s) => s.loading);
-  const error = useMapStore((s) => s.error);
-  const playerShapes = useMapStore((s) => s.playerShapes);
+  const {
+    mapData,
+    shapes,
+    items,
+    rooms,
+    mainRoom,
+    currentRoom,
+    pointsOfInterest,
+    players,
+    sessionId,
+    loading,
+    error,
+    playerShapes,
+    scale,
+    position,
+    activeTab,
+    selectedShape,
+    selectedItemInstance,
+    selectedPOI,
+    editingPOI,
+    isPOIModalOpen,
+    isItemModalOpen,
+    isRoomModalOpen,
+    showEditor,
+    currentTurnShapeId,
+    roomModalSource,
+    setShapes,
+    setCurrentRoom,
+    setPlayers,
+    setSessionId,
+    setRooms,
+    setItems,
+    setPointsOfInterest,
+    setMapData,
+    setScale,
+    setPosition,
+    setActiveTab,
+    setSelectedShape,
+    setSelectedItemInstance,
+    setSelectedPOI,
+    setEditingPOI,
+    setIsPOIModalOpen,
+    setIsItemModalOpen,
+    setIsRoomModalOpen,
+    setShowEditor,
+    setCurrentTurnShapeId,
+    setRoomModalSource,
+    setMapId,
+  } = useMapStore();
 
-  const scale = useMapStore((s) => s.scale);
-  const position = useMapStore((s) => s.position);
-  const activeTab = useMapStore((s) => s.activeTab);
-  const selectedShape = useMapStore((s) => s.selectedShape);
-  const selectedItemInstance = useMapStore((s) => s.selectedItemInstance);
-  const selectedPOI = useMapStore((s) => s.selectedPOI);
-  const editingPOI = useMapStore((s) => s.editingPOI);
-  const isPOIModalOpen = useMapStore((s) => s.isPOIModalOpen);
-  const isItemModalOpen = useMapStore((s) => s.isItemModalOpen);
-  const isRoomModalOpen = useMapStore((s) => s.isRoomModalOpen);
-  const showEditor = useMapStore((s) => s.showEditor);
-  const currentTurnShapeId = useMapStore((s) => s.currentTurnShapeId);
-  const roomModalSource = useMapStore((s) => s.roomModalSource);
-
-  const setShapes = useMapStore((s) => s.setShapes);
-  const setCurrentRoom = useMapStore((s) => s.setCurrentRoom);
-  const setPlayers = useMapStore((s) => s.setPlayers);
-  const setSessionId = useMapStore((s) => s.setSessionId);
-  const setRooms = useMapStore((s) => s.setRooms);
-  const setItems = useMapStore((s) => s.setItems);
-  const setPointsOfInterest = useMapStore((s) => s.setPointsOfInterest);
-  const setMapData = useMapStore((s) => s.setMapData);
-  const setScale = useMapStore((s) => s.setScale);
-  const setPosition = useMapStore((s) => s.setPosition);
-  const setActiveTab = useMapStore((s) => s.setActiveTab);
-  const setSelectedShape = useMapStore((s) => s.setSelectedShape);
-  const setSelectedItemInstance = useMapStore((s) => s.setSelectedItemInstance);
-  const setSelectedPOI = useMapStore((s) => s.setSelectedPOI);
-  const setEditingPOI = useMapStore((s) => s.setEditingPOI);
-  const setIsPOIModalOpen = useMapStore((s) => s.setIsPOIModalOpen);
-  const setIsItemModalOpen = useMapStore((s) => s.setIsItemModalOpen);
-  const setIsRoomModalOpen = useMapStore((s) => s.setIsRoomModalOpen);
-  const setShowEditor = useMapStore((s) => s.setShowEditor);
-  const setCurrentTurnShapeId = useMapStore((s) => s.setCurrentTurnShapeId);
-  const setRoomModalSource = useMapStore((s) => s.setRoomModalSource);
-  const setMapId = useMapStore((s) => s.setMapId);
   const backgroundUrl = currentRoom?.background_image || mainRoom?.background_image || '';
 
   const { handleDrop } = useMapHandlers({
