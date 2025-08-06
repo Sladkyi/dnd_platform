@@ -6,27 +6,30 @@ import PointLayer from '../../../entities/shape/PointLayer';
 import { updateItemPosition } from '../../../services/MapService';
 import ItemInstanceLayer from '../../../entities/shape/ItemInstanceLayer';
 import useMapStore from '../store/useMapStore';
+import useMapActions from '../hooks/useMapActions';
 
-const MapStage = ({
-  shapes,
-  points,
-  onDragShape,
-  onDoubleClickShape,
-  selectedShape,
-  setSelectedShape,
-  onSelectRoom,
-  backgroundUrl,
-  itemInstances,
-  onItemClick,
-  onPointClick,
-  setActiveTab,
-  setCurrentRoom
-}) => {
-  const scale = useMapStore((s) => s.scale);
-  const setScale = useMapStore((s) => s.setScale);
-  const position = useMapStore((s) => s.position);
+const MapStage = () => {
+  const {
+    shapes,
+    items: itemInstances,
+    pointsOfInterest: points,
+    currentRoom,
+    mainRoom,
+    selectedShape,
+    setSelectedShape,
+    setSelectedItemInstance,
+    setSelectedPOI,
+    setActiveTab,
+    setShowEditor,
+    scale,
+    setScale,
+    position,
+    setPosition,
+  } = useMapStore();
+  const { handleRoomChange } = useMapActions();
 
-  const setPosition = useMapStore((s) => s.setPosition);
+  const backgroundUrl = currentRoom?.background_image || mainRoom?.background_image || '';
+
   const stageRef = useRef();
   const [isDragging, setIsDragging] = useState(false);
   const [lastMousePos, setLastMousePos] = useState(null);
@@ -110,14 +113,19 @@ const handleMouseMove = (e) => {
       <Layer>
         <ItemInstanceLayer
           itemInstances={itemInstances}
-          onItemClick={onItemClick}
+          onItemClick={(item) => {
+            setSelectedItemInstance(item);
+            setActiveTab('item');
+          }}
         />
       </Layer>
 
       <ShapeLayer
         shapes={shapes}
-        onDrag={onDragShape}
-        onDoubleClickShape={onDoubleClickShape}
+        onDoubleClickShape={(shape) => {
+          setSelectedShape(shape);
+          setShowEditor(true);
+        }}
         selectedShape={selectedShape}
         onSelectShape={(shape) => {
           if (selectedShape?.id === shape.id) {
@@ -128,14 +136,16 @@ const handleMouseMove = (e) => {
             setActiveTab('shape');
           }
         }}
-        onDragEnd={onDragShape}
       />
 
       <PointLayer
         points={points}
-        onSelectRoom={onSelectRoom}
-        onPointClick={onPointClick}
-        setCurrentRoom={setCurrentRoom}
+        onSelectRoom={handleRoomChange}
+        onPointClick={(poi) => {
+          setSelectedPOI(poi);
+          setActiveTab('poi_manage');
+        }}
+        setCurrentRoom={handleRoomChange}
       />
     </Stage>
   );

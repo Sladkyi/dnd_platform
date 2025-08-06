@@ -1,5 +1,5 @@
 // AttackEditor.jsx — редактор атак для GLORIOUS NOCTURNE
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import '../shared/styles/ClassEditor.css'; // Используем те же стили
 import { useParams } from 'react-router-dom';
 import {
@@ -8,6 +8,7 @@ import {
   updateAttack,
   deleteAttack,
 } from '../services/MapService';
+import useAttackStore from '../store/useAttackStore';
 
 const AttackEditor = () => {
   const { id: profileId } = useParams();
@@ -38,19 +39,20 @@ const AttackEditor = () => {
     'Легкое',
   ];
 
-  const initialState = {
-    name: '',
-    attackType: 'Оружие',
-    damageDice: '1d6',
-    damageType: '',
-    properties: [],
-    range: '5 футов',
-    description: '',
-  };
-
-  const [attackData, setAttackData] = useState(initialState);
-  const [savedAttacks, setSavedAttacks] = useState([]);
-  const [selectedAttack, setSelectedAttack] = useState(null);
+  const {
+    attackData,
+    savedAttacks,
+    selectedAttack,
+    updateAttackField,
+    toggleProperty,
+    setAttackData,
+    setSavedAttacks,
+    addAttack,
+    updateSavedAttack,
+    removeAttack,
+    setSelectedAttack,
+    resetAttackData,
+  } = useAttackStore();
 
   useEffect(() => {
     if (!profileId) {
@@ -65,21 +67,15 @@ const AttackEditor = () => {
       .catch((err) => {
         console.error('Ошибка при загрузке атак:', err);
       });
-  }, [profileId]);
+  }, [profileId, setSavedAttacks]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setAttackData((prev) => ({ ...prev, [name]: value }));
+    updateAttackField(name, value);
   };
 
   const handlePropertyChange = (property) => {
-    setAttackData((prev) => {
-      const newProps = prev.properties.includes(property)
-        ? prev.properties.filter((p) => p !== property)
-        : [...prev.properties, property];
-
-      return { ...prev, properties: newProps };
-    });
+    toggleProperty(property);
   };
 
   const handleCreate = async () => {
@@ -102,8 +98,8 @@ const AttackEditor = () => {
       };
 
       const response = await createAttack(payload);
-      setSavedAttacks((prev) => [...prev, response.data]);
-      setAttackData(initialState);
+      addAttack(response.data);
+      resetAttackData();
     } catch (err) {
       console.error('Ошибка при создании атаки:', err);
     }
@@ -124,11 +120,8 @@ const AttackEditor = () => {
       };
 
       const response = await updateAttack(id, payload);
-      setSavedAttacks((prev) =>
-        prev.map((atk) => (atk.id === id ? response.data : atk))
-      );
-      setSelectedAttack(null);
-      setAttackData(initialState);
+      updateSavedAttack(response.data);
+      resetAttackData();
     } catch (err) {
       console.error('Ошибка при обновлении атаки:', err);
     }
@@ -138,7 +131,7 @@ const AttackEditor = () => {
     if (!window.confirm('Удалить эту атаку?')) return;
     try {
       await deleteAttack(id);
-      setSavedAttacks((prev) => prev.filter((atk) => atk.id !== id));
+      removeAttack(id);
       if (selectedAttack?.id === id) handleReset();
     } catch (err) {
       console.error('Ошибка при удалении атаки:', err);
@@ -159,8 +152,7 @@ const AttackEditor = () => {
   };
 
   const handleReset = () => {
-    setSelectedAttack(null);
-    setAttackData(initialState);
+    resetAttackData();
   };
 
   return (
