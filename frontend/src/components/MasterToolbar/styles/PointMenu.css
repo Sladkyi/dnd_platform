@@ -1,0 +1,69 @@
+:root {
+    --glass-bg: rgba(40, 42, 46, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --text-primary: rgba(255, 255, 255, 0.95);
+    --accent: #61dafb;
+    --accent-hover: #8ae2ff;
+    --radius-md: 16px;
+    --radius-sm: 8px;
+    --blur: blur(20px);
+    --transition: all 0.25s ease;
+    --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.point-menu {
+    padding: 16px;
+    border-radius: var(--radius-md);
+    background: var(--glass-bg);
+    backdrop-filter: var(--blur);
+    -webkit-backdrop-filter: var(--blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.point-menu-header {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    text-align: left;
+    margin-bottom: 8px;
+}
+
+.point-menu-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.point-menu-buttons button {
+    padding: 6px 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+}
+
+.point-menu-buttons button:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.point-menu-buttons .close-btn {
+    margin-left: auto;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.4);
+    padding: 6px 8px;
+    font-size: 0.85rem;
+}
+
+.point-menu-buttons .close-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+}

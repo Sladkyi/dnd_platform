@@ -1,0 +1,54 @@
+/* Split CSS file for EditMap styles */
+@import './editmap/base.css';
+@import './editmap/tools.css';
+@import './editmap/rooms.css';
+@import './editmap/master-toolbar.css';
+@import './editmap/draggable.css';
+@import './editmap/controls.css';
+@import './editmap/context-menu.css';
+@import './editmap/modal.css';
+@import './editmap/animations.css';
+@import './editmap/responsive.css';
+
+.current-turn-panel {
+    background: #111;
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: #f0f0f0;
+    font-family: 'Inter', sans-serif;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    margin: 16px 0;
+    max-width: 320px;
+    border: 1px solid #333;
+    transition: all 0.3s ease;
+}
+
+.current-turn-panel h4 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    color: #888;
+}
+
+.current-turn-id {
+    font-size: 24px;
+    font-weight: bold;
+    color: #00ffd0;
+    animation: pulse 1.5s infinite;
+}
+
+.current-turn-id span {
+    margin-left: 8px;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+
+    100% {
+        opacity: 1;
+    } }

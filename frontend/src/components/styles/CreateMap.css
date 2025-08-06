@@ -1,0 +1,105 @@
+.map-creation-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: var(--global-bg-dark);
+  font-family: var(--font-main);
+}
+
+.map-card {
+  width: 100%;
+}
+
+.map-creation-card {
+  background: var(--global-bg-secondary);
+  border-radius: var(--radius-large);
+  padding: 30px;
+  box-shadow:
+    8px 8px 15px var(--ui-shadow-medium),
+    -8px -8px 15px var(--ui-shadow-light);
+  width: 400px;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+h2 {
+  color: var(--text-primary);
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.input-label {
+  color: var(--text-secondary);
+  font-size: 16px;
+  text-align: left;
+  margin-bottom: 5px;
+}
+
+.input-field {
+  background: var(--card-bg-secondary);
+  border: none;
+  border-radius: var(--radius-main);
+  padding: 12px;
+  font-size: 16px;
+  color: var(--text-primary);
+  box-shadow:
+    inset 5px 5px 10px var(--ui-shadow-dark),
+    inset -5px -5px 10px var(--ui-shadow-light);
+  transition: box-shadow 0.3s ease;
+}
+
+.input-field:focus {
+  outline: none;
+  box-shadow:
+    inset 5px 5px 10px var(--ui-shadow-light),
+    inset -5px -5px 10px var(--ui-shadow-dark);
+}
+
+.submit-button {
+  background: var(--btn-bg-primary);
+  border: none;
+  border-radius: var(--radius-main);
+  padding: 12px;
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--text-primary);
+  cursor: pointer;
+  box-shadow:
+    4px 4px 8px var(--ui-shadow-dark),
+    -4px -4px 8px var(--ui-shadow-light);
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.submit-button:hover {
+  background: var(--btn-bg-hover);
+  box-shadow:
+    4px 4px 8px var(--ui-shadow-dark),
+    -4px -4px 8px var(--ui-shadow-light);
+}
+
+.submit-button:active {
+  background: var(--btn-bg-active);
+  box-shadow: inset 2px 2px 5px var(--ui-shadow-light);
+}
+
+.image-preview {
+  margin-top: 20px;
+}
+
+.image-preview img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-main);
+  box-shadow:
+    4px 4px 8px var(--ui-shadow-dark),
+    -4px -4px 8px var(--ui-shadow-light);
+}

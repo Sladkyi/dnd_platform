@@ -1,0 +1,426 @@
+/* CombatTab.css — macOS Dark Glassmorphism Refined (Perfected) */
+
+:root {
+    --bg-glass: rgba(28, 28, 30, 0.7);
+    --border-light: rgba(255, 255, 255, 0.08);
+    --text-main: rgba(255, 255, 255, 0.95);
+    --text-secondary: rgba(235, 235, 245, 0.6);
+    --accent: #0A84FF;
+    --health: #FF453A;
+    --defense: #30D158;
+    --initiative: #64D2FF;
+    --attacks: #5E5CE6;
+    --hitdice: #FF9F0A;
+    --states: #BF5AF2;
+  }
+  
+  .combat-tab {
+    padding: 1.2rem;
+    background: linear-gradient(180deg, #1c1c1e 0%, #111114 100%);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    color: var(--text-main);
+    font-size: 0.75rem;
+    border-radius: 20px;
+    box-shadow: 0 6px 50px rgba(0, 0, 0, 0.45);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(30px) saturate(200%);
+    -webkit-backdrop-filter: blur(30px) saturate(200%);
+  }
+
+  .panel {
+    background: var(--bg-glass);
+    backdrop-filter: blur(30px) saturate(200%);
+    -webkit-backdrop-filter: blur(30px) saturate(200%);
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    padding: 0.8rem;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+    margin-bottom: 0.8rem;
+  }
+  
+  .section-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.6rem;
+    color: var(--text-main);
+  }
+  
+  .hp-display {
+    position: relative;
+    margin-bottom: 0.5rem;
+  }
+  
+  .hp-numbers {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  
+  .hp-bar {
+    height: 18px;
+    border-radius: 5px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-light);
+  }
+  
+  .hp-bar-gradient {
+    background: linear-gradient(90deg, var(--health), rgba(194, 69, 69, 0.1));
+    height: 100%;
+    width: 100%;
+  }
+  
+  .input-label {
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    margin-bottom: 0.2rem;
+  }
+    .hitdice-button {
+      padding: 8px 14px;
+      font-size: 15px;
+      border-radius: 8px;
+      border: 1px solid var(--stats-border);
+      background: var(--dice-button-bg);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+  
+    .hitdice-button:hover {
+      background: var(--dice-button-hover-bg);
+      transform: scale(1.05);
+      color: var(--dice-roll);
+    }
+  
+    .hitdice-popup {
+      margin-top: 14px;
+      font-size: 17px;
+      background: var(--dice-result-bg);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--stats-border);
+      box-shadow: 0 0 15px var(--dice-result-shine);
+      animation: fadeInOut 3.5s ease;
+      text-align: center;
+    }
+        .dice-button {
+          background: var(--panel-bg);
+          color: var(--text-primary);
+          font-weight: bold;
+          font-size: 1rem;
+          border: 1px solid var(--ui-border-primary);
+          border-radius: 8px;
+          padding: 0.5rem 0.75rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+    
+        .dice-button:hover {
+          background-color: rgba(255, 255, 255, 0.07);
+          transform: translateY(-1px);
+        }
+    
+                .dice-roll-popup {
+                  animation: rollPopupFade 3.5s forwards;
+                  margin-top: 12px;
+                  padding: 0.6rem 1rem;
+                  background: rgba(255, 255, 255, 0.06);
+                  border: 1px solid rgba(255, 255, 255, 0.1);
+                  border-radius: 10px;
+                  color: var(--text-primary);
+                  font-weight: 600;
+                  text-align: center;
+                  animation: rollPopupFade 3.5s forwards;
+                  /* ⬅️ важно: точно столько, сколько длится видимость */
+                }
+        
+                @keyframes rollPopupFade {
+                  0% {
+                    opacity: 0;
+                    transform: translateY(8px);
+                  }
+        
+                  10% {
+                    opacity: 1;
+                    transform: translateY(0);
+                  }
+        
+                  85% {
+                    opacity: 1;
+                    transform: translateY(0);
+                  }
+        
+                  100% {
+                    opacity: 0;
+                    transform: translateY(-4px);
+                  }       
+        }
+    .hitdice-popup .breakdown {
+      font-size: 14px;
+      color: var(--text-muted);
+      display: block;
+      margin-top: 4px;
+    }
+  
+    @keyframes fadeInOut {
+      0% {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+  
+      10% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+  
+      90% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+  
+      100% {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+    }
+  .form-input,
+  .dice-macro-input,
+  .attack-name-input,
+  .bonus-input,
+  .damage-input,
+  .attack-description,
+  .actions-textarea {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    padding: 0.4rem 0.5rem;
+    width: 100%;
+    color: var(--text-main);
+    font-size: 0.75rem;
+    transition: all 0.25s ease;
+  }
+  
+  button {
+    cursor: pointer;
+  }
+  
+  .restore-button,
+  .remove-attack-button,
+  .add-attack-button,
+  .use-dice-button,
+  .rest-dice-button,
+  .dice-button,
+  .roll-dice-button,
+  .state-button {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-light);
+    color: var(--text-main);
+    border-radius: 6px;
+    padding: 0.3rem 0.55rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .restore-button:hover,
+  .remove-attack-button:hover,
+  .add-attack-button:hover,
+  .use-dice-button:hover,
+  .rest-dice-button:hover,
+  .dice-button:hover,
+  .roll-dice-button:hover,
+  .state-button:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+    border-color: var(--accent);
+  }
+    .roll-initiative-button {
+      margin-top: 8px;
+      padding: 8px 12px;
+      font-size: 18px;
+      border-radius: 8px;
+      background: var(--dice-button-bg);
+      border: 1px solid var(--stats-border);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+  
+    .roll-initiative-button:hover {
+      background: var(--dice-button-hover-bg);
+      transform: scale(1.05);
+      color: var(--dice-roll);
+    }
+  
+    .roll-result-popup {
+      margin-top: 12px;
+      font-size: 16px;
+      background: var(--dice-result-bg);
+      color: var(--text-primary);
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--stats-icon);
+      box-shadow: 0 0 15px var(--dice-result-shine);
+      animation: appear 0.3s ease;
+    }
+  
+    @keyframes appear {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+  
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      } }
+  .stat-card {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--border-light);
+    border-radius: 7px;
+    padding: 0.5rem;
+    text-align: center;
+    color: var(--text-main);
+  }
+    .saving-input {
+      width: 60px;
+      text-align: center;
+      background: transparent;
+      border: 1px solid var(--border-dark);
+      color: white;
+      border-radius: 6px;
+      padding: 4px 6px; }
+  .stat-value {
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+  
+  .stat-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+  }
+  
+  .saving-throw {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-light);
+    border-radius: 5px;
+    padding: 0.4rem;
+    text-align: center;
+    flex: 1;
+    min-width: 60px;
+  }
+  
+  .saving-ability {
+    text-transform: uppercase;
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.15rem;
+  }
+  
+  .saving-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  
+  .attack-item {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .state-button.active {
+    background: rgba(191, 90, 242, 0.15);
+    border-color: var(--states);
+    color: var(--states);
+    font-weight: 600;
+  }
+  
+  .dice-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-bottom: 0.6rem;
+  }
+  
+  .states-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.6rem;
+  }
+  
+  .initiative-display,
+  .hitdice-display {
+    text-align: center;
+  }
+  
+  .initiative-value,
+  .hitdice-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--initiative);
+    margin-bottom: 0.25rem;
+  }
+  
+  .initiative-modifier {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+  }
+  
+  .modal-footer {
+    background-color: rgba(28, 28, 30, 0.72);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border: none;
+    padding-top: 0.7rem;
+    padding-bottom: 0.7rem;
+    border-radius: 0 0 20px 20px;
+  }
+  .level-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  
+  .level-label {
+    font-weight: 500;
+    color: #ccc;
+  }
+  
+  .level-value {
+    font-weight: bold;
+    font-size: 18px;
+    color: #fff;
+  }
+  
+  .level-bar {
+    flex: 1;
+    height: 6px;
+    background: #444;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  
+  .level-bar-fill {
+    height: 100%;
+    background: #007bff;
+    transition: width 0.3s ease;
+  }
+  
+  .level-exp {
+    font-size: 12px;
+    color: #999;
+  }
+  

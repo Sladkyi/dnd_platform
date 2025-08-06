@@ -1,0 +1,294 @@
+/* Переписанный CSS без жестко закодированных цветов */
+
+/* Базовые стили */
+body {
+  background: var(--global-bg-main);
+  color: var(--text-primary);
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Стили для Entity Editor */
+.entity-editor .modal-content {
+  background: var(--modal-bg);
+  border-radius: var(--radius-large);
+  box-shadow: 0 12px 28px var(--ui-shadow-dark);
+  transition:
+    box-shadow 0.3s ease,
+    transform 0.3s ease;
+  overflow: hidden;
+  border: 1px solid var(--ui-border-secondary);
+}
+
+.entity-editor .modal-header,
+.entity-editor .modal-footer {
+  background-color: var(--modal-bg);
+  border: none;
+  padding: 20px 24px;
+}
+
+.entity-editor .modal-body {
+  background-color: var(--modal-bg);
+  padding: 0 24px 24px 24px;
+}
+
+/* Формы и инпуты */
+.form-control,
+.form-check-input {
+  background-color: var(--form-bg);
+  border: 1px solid var(--form-border);
+  color: var(--text-primary);
+  border-radius: var(--radius-main);
+  padding: 10px 14px;
+  font-size: 15px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.form-control:focus,
+.form-check-input:focus {
+  border-color: var(--form-focus-border);
+  box-shadow: 0 0 6px var(--form-focus-shadow);
+  outline: none;
+}
+
+/* Кнопки */
+.btn {
+  font-weight: 500;
+  padding: 10px 22px;
+  font-size: 15px;
+  border-radius: var(--radius-main);
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.btn:hover {
+  background-color: var(--btn-bg-hover);
+  box-shadow: 0 0 10px var(--btn-shadow);
+}
+
+.btn:active {
+  background-color: var(--btn-bg-active);
+  box-shadow: inset 0 0 5px var(--ui-shadow-medium);
+}
+
+/* Текстовые утилиты */
+.text-primary {
+  color: var(--text-primary) !important;
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+.border-primary {
+  border-color: var(--text-primary) !important;
+}
+
+/* Стат-блоки */
+.stat-block {
+  background: var(--card-bg-primary);
+  border-radius: var(--radius-large);
+  padding: 20px;
+  box-shadow: 0 4px 10px var(--card-shadow);
+  margin-bottom: 20px;
+}
+
+/* Аватары */
+.avatar-upload img {
+  object-fit: cover;
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  border-radius: 50%;
+  border: 2px solid var(--avatar-border);
+  box-shadow: 0 0 12px var(--avatar-shadow);
+  transition: box-shadow 0.3s ease;
+}
+
+.avatar-upload img:hover {
+  box-shadow: 0 0 18px var(--ui-shadow-light);
+}
+
+/* Кнопки-иконки */
+.icon-button {
+  background-color: var(--icon-button-bg);
+  border-radius: 50%;
+  padding: 10px;
+  color: var(--text-primary);
+  box-shadow: 0 2px 5px var(--ui-shadow-medium);
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.icon-button:hover {
+  background-color: var(--icon-button-hover-bg);
+  box-shadow: 0 4px 10px var(--ui-shadow-medium);
+}
+
+/* Вкладки навигации */
+.nav-tabs {
+  border: none;
+  margin-bottom: 20px;
+}
+
+.nav-tabs .nav-link {
+  color: var(--tab-inactive);
+  background-color: transparent;
+  border: none;
+  padding: 10px 18px;
+  font-weight: 500;
+  font-size: 15px;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.nav-tabs .nav-link:hover {
+  color: var(--tab-hover);
+  background-color: var(--tab-hover-bg);
+  border-radius: var(--radius-small) var(--radius-small) 0 0;
+}
+
+.nav-tabs .nav-link.active {
+  color: var(--tab-hover);
+  background-color: var(--tab-active-bg);
+  border-radius: var(--radius-main) var(--radius-main) 0 0;
+  font-weight: 600;
+}
+
+/* Стили для вкладки "Статы" */
+.stats-tab {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text-primary);
+  background: var(--stats-bg);
+  padding: 15px;
+  border-radius: var(--radius-large);
+  border: 2px solid var(--stats-border);
+  box-shadow:
+    0 0 20px var(--ui-shadow-dark),
+    inset 0 0 10px var(--ui-shadow-medium);
+  position: relative;
+  overflow: hidden;
+}
+
+.stats-tab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--noise-pattern);
+  z-index: 0;
+}
+
+/* Карточка характеристики */
+.stat-tile {
+  background: var(--stats-bg);
+  border: 1px solid var(--stats-border);
+  border-radius: var(--radius-main);
+  box-shadow:
+    0 3px 12px var(--ui-shadow-dark),
+    inset 0 0 5px var(--ui-shadow-medium);
+  transition: all 0.3s ease;
+  z-index: 1;
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-tile:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 5px 15px var(--stat-tile-hover-shadow),
+    inset 0 0 5px var(--ui-shadow-medium);
+  border-color: var(--stats-title);
+}
+
+.stat-header {
+  background: var(--stats-border);
+  border-bottom: 1px solid var(--stats-title);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.stat-title {
+  color: var(--stats-title);
+  text-shadow: 1px 1px 2px var(--ui-shadow-dark);
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: bold;
+  flex-grow: 1;
+}
+
+.stat-icon {
+  color: var(--stats-icon);
+  font-size: 1.1rem;
+  margin-right: 8px;
+}
+
+.mod-badge {
+  background: var(--stats-badge-bg);
+  color: var(--stats-badge-text);
+  font-size: 1.1rem;
+  font-weight: bold;
+  min-width: 40px;
+  padding: 4px 10px;
+  border-radius: 15px;
+  box-shadow: 0 2px 5px var(--ui-shadow-medium);
+  border: 1px solid var(--stats-title);
+}
+
+.stat-input {
+  background: var(--stats-input-bg);
+  color: var(--stats-input-text);
+  border: 1px solid var(--stats-input-border);
+  font-size: 1.6rem;
+  font-weight: bold;
+  height: 50px;
+  text-align: center;
+  box-shadow: inset 0 0 8px var(--ui-shadow-medium);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  margin: 8px 0;
+}
+
+.stat-input:focus {
+  border-color: var(--stats-icon);
+  box-shadow:
+    0 0 8px var(--stats-icon-shadow),
+    inset 0 0 10px var(--ui-shadow-dark);
+}
+
+/* Мини-блок «Бонус мастерства» */
+.mini-proficiency {
+  background: var(--proficiency-bg);
+  border: 1px solid var(--stats-border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.mini-proficiency-label {
+  font-size: 0.85rem;
+  color: var(--skill-name);
+}
+
+.mini-proficiency-badge {
+  background: var(--stats-badge-bg);
+  color: var(--stats-badge-text);
+  font-size: 0.9rem;
+  font-weight: bold;
+  padding: 2px 6px;
+}

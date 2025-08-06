@@ -1,0 +1,131 @@
+:root {
+    --bg-glass: rgba(40, 40, 45, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --text-primary: rgba(255, 255, 255, 0.95);
+    --accent: #61dafb;
+    --accent-hover: #8ae2ff;
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --blur: blur(16px);
+    --transition: all 0.2s ease;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.toolBarBox {
+    width: 70%;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column-reverse;
+    /* Контент над тулбаром */
+    align-items: center;
+    gap: 8px;
+    z-index: 1000;
+}
+
+.master-toolbar {
+    display: flex;
+    padding: 6px;
+    background: var(--bg-glass);
+    backdrop-filter: var(--blur);
+    -webkit-backdrop-filter: var(--blur);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow);
+}
+
+.tabs {
+    display: flex;
+    gap: 4px;
+}
+
+.tab-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 18px;
+}
+
+.tab-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.tab-btn.active {
+    background: rgba(97, 218, 251, 0.15);
+    color: var(--accent);
+}
+
+.toolbar-content {
+    width: 50%;
+    padding: 8px;
+    background: var(--bg-glass);
+    backdrop-filter: var(--blur);
+    -webkit-backdrop-filter: var(--blur);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow);
+    display: flex;
+    /* Скрыто по умолчанию */
+}
+
+.tab-panel {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+        flex-direction: column
+}
+
+.tab-panel button {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 16px;
+}
+
+.tab-panel button:hover {
+    background: rgba(97, 218, 251, 0.15);
+}
+
+.tab-panel button.danger {
+    color: #ff5f5f;
+}
+
+.tab-panel button.danger:hover {
+    background: rgba(255, 95, 95, 0.15);
+}
+
+/* Активация контента */
+.toolbar-content.active {
+    display: block;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .toolBarBox {
+        width: 96%;
+        left: 2%;
+    }
+
+    .tab-panel {
+        max-width: 100%;
+        justify-content: center;
+    }
+}

@@ -1,0 +1,115 @@
+/* Кнопка броска кубика */
+.dice-button {
+    color: var(--stats-title);
+    border: 1px solid var(--stats-border);
+    background: var(--dice-button-bg);
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    font-size: 0.8rem;
+}
+.dice-button:hover {
+    background: var(--dice-button-hover-bg);
+    color: var(--dice-roll);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+}
+/* Недавние броски */
+.recent-rolls {
+    background: var(--recent-rolls-bg);
+    border-top: 1px solid var(--stats-border);
+    padding: 8px;
+    font-size: 0.8rem;
+}
+
+.recent-label {
+    color: var(--stats-icon);
+    font-size: 0.8rem;
+    margin-bottom: 5px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.recent-roll {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 6px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    background: var(--recent-roll-bg);
+    font-size: 0.75rem;
+}
+
+.roll-skill {
+    color: var(--skill-name);
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 60%;
+}
+
+.roll-result {
+    color: var(--roll-result);
+    font-weight: bold;
+    margin: 0 5px;
+    min-width: 20px;
+    text-align: center;
+}
+
+.roll-details {
+    color: var(--roll-details);
+    font-size: 0.7rem;
+}
+
+/* Окно результата броска */
+#dice-result {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) translateY(10px);
+    z-index: 1000;
+    display: none;
+    opacity: 0;
+    transition: all 0.4s ease;
+}
+
+.dice-result-inner {
+    background: var(--dice-result-bg);
+    border: 2px solid var(--stats-icon);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 0 25px var(--dice-result-shine);
+    text-align: center;
+    min-width: 220px;
+}
+
+.dice-roll {
+    font-size: 3.5rem;
+    color: var(--dice-roll);
+    font-weight: bold;
+    line-height: 1;
+    margin-bottom: 10px;
+}
+
+.dice-total {
+    font-size: 2rem;
+    color: var(--dice-total);
+    margin-bottom: 12px;
+}
+
+.dice-details {
+    font-size: 1rem;
+    color: var(--dice-details);
+    margin-bottom: 10px;
+}
+
+.critical-text {
+    color: var(--critical-text);
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-top: 8px; }

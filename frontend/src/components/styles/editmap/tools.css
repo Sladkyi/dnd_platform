@@ -1,0 +1,58 @@
+/* ツールセクション - 刀の鍔をイメージ */
+.tool-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+    z-index: 4;
+}
+
+.tool-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    background: var(--button-bg);
+    border: 1px solid var(--button-border);
+    border-radius: 2px;
+    color: var(--text-secondary);
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    font-weight: 500;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.tool-button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    transition: left 0.6s ease;
+}
+
+.tool-button:hover::after {
+    left: 100%;
+}
+
+.tool-button:hover {
+    background: var(--button-hover);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.tool-button.danger {
+    background: var(--danger-bg);
+    border-color: var(--danger-border);
+    color: var(--text-secondary);
+}
+
+.tool-button.danger:hover {
+    background: var(--danger-hover);
+    color: var(--text-primary); }

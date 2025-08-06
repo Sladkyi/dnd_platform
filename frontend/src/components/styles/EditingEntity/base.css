@@ -1,0 +1,141 @@
+/* 🍎 Wasurekami — Entity Editor (Refined Glass v3) */
+:root {
+    --bg-blur: rgba(28, 28, 30, 0.6);
+    --bg-panel: rgba(44, 44, 46, 0.5);
+    --bg-hover: rgba(255, 255, 255, 0.06);
+    --bg-active: rgba(255, 255, 255, 0.12);
+
+    --border-light: rgba(255, 255, 255, 0.07);
+    --border-heavy: rgba(255, 255, 255, 0.12);
+    --shadow-soft: 0 6px 20px rgba(50, 50, 60, 0.2);
+
+    --text-main: rgba(255, 255, 255, 0.92);
+    --text-secondary: rgba(235, 235, 245, 0.5);
+    --text-muted: rgba(255, 255, 255, 0.3);
+
+    --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    --radius: 20px;
+    --avatar-size: 64px;
+}
+
+/* ========== Layout ========== */
+body {
+    background-color: var(--bg-blur);
+    font-family: var(--font-system);
+    color: var(--text-main);
+    margin: 0;
+    padding: 0;
+}
+
+/* ========== Modal Panel ========== */
+.entity-editor .modal-content {
+    background: var(--bg-panel);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border-radius: var(--radius);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-soft);
+    padding: 24px;
+}
+
+.entity-editor .modal-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 1rem;
+}
+
+/* ========== Form Elements ========== */
+.form-control,
+.form-check-input {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    color: var(--text-main);
+    transition: all 0.2s ease;
+}
+
+.form-control:focus,
+.form-check-input:focus {
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.15);
+    outline: none;
+}
+
+/* ========== Buttons ========== */
+.btn {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-main);
+    border: 1px solid var(--border-light);
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    border-radius: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease, border 0.2s ease;
+}
+
+.btn:hover {
+    background: var(--bg-hover);
+}
+
+.btn:active {
+    background: var(--bg-active);
+}
+
+/* ========== Avatar ========== */
+.avatar-upload img {
+    width: var(--avatar-size);
+    height: var(--avatar-size);
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border-heavy);
+    box-shadow: 0 0 10px rgba(120, 120, 130, 0.2);
+    transition: box-shadow 0.2s ease;
+}
+
+.avatar-upload img:hover {
+    box-shadow: 0 0 16px rgba(160, 160, 170, 0.3);
+}
+
+/* ========== Icon Buttons ========== */
+.icon-button {
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-radius: 50%;
+    padding: 10px;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+}
+
+.icon-button:hover {
+    background: var(--bg-hover);
+}
+
+/* ========== Stat Block ========== */
+.stat-block {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow-soft);
+    margin-bottom: 20px;
+}
+
+/* ========== Text Helpers ========== */
+.text-primary {
+    color: var(--text-main) !important;
+}
+
+.text-secondary {
+    color: var(--text-secondary) !important;
+}
+
+.text-muted {
+    color: var(--text-muted) !important;
+}

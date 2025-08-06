@@ -1,0 +1,42 @@
+/* レスポンシブデザイン */
+@media (max-width: 1200px) {
+    .side-panel {
+        width: 280px;
+        padding: 20px;
+    }
+
+    .master-toolbar {
+        padding: 14px 20px;
+    }
+
+    .toolbar-section {
+        padding: 0 12px;
+    }
+}
+
+@media (max-width: 992px) {
+    .edit-map-container {
+        flex-direction: column;
+    }
+
+    .side-panel {
+        position: relative;
+        width: 100%;
+        height: auto;
+        max-height: 45vh;
+        left: auto;
+        transform: none;
+        border-left: none;
+        border-top: 1px solid var(--storm-border);
+    }
+
+    .master-toolbar {
+        flex-wrap: wrap;
+        gap: 12px;
+        position: relative;
+    }
+
+    .toolbar-section {
+        flex: 1 1 100%;
+        max-width: none;
+    } }
