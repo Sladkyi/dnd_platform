@@ -45,8 +45,8 @@ export const initializeEditor = async (mapId, profileId) => {
       fetchPointsOfInterest(mapId),
       profileId ? getPlayerEntities(profileId) : Promise.resolve({ data: [] }),
     ]);
-    const itemInstancesRes = await GetItemInstances(mapId);
-    setItemInstances(itemInstancesRes.data);
+
+
     setMapData(mapRes.data);
     setRooms(roomsRes.data);
     setCurrentRoom(roomsRes.data?.[0] || null); // 👈 первый room — как fallback
