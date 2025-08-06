@@ -1,14 +1,12 @@
 import React from 'react';
 import MasterToolbar from './MasterToolbar/MasterToolbar';
 import ToolbarContent from './MasterToolbar/ToolbarContent';
-import useMapStore from "../store/useMapStore";
+import useMapStore from '../store/useMapStore';
+import useMapActions from '../hooks/useMapActions';
 
-const ToolPanel = ({
-  mapId,
-  mapTitle,
-  handleRoomChange,
-  handleInvitePlayers,
-}) => {
+const ToolPanel = () => {
+  const mapId = useMapStore((s) => s.mapId);
+  const mapTitle = useMapStore((s) => s.mapData?.title || 'Без названия');
   const activeTab = useMapStore((s) => s.activeTab);
   const setActiveTab = useMapStore((s) => s.setActiveTab);
   const selectedShape = useMapStore((s) => s.selectedShape);
@@ -33,6 +31,8 @@ const ToolPanel = ({
   const clearSelectedItemInstance = () => useMapStore.setState({ selectedItemInstance: null });
   const setIsItemModalOpen = useMapStore((s) => s.setIsItemModalOpen);
   const setShapes = useMapStore((s) => s.setShapes);
+
+  const { handleRoomChange, handleInvitePlayers } = useMapActions();
 
   return (
     <div className="toolBarBox">
@@ -84,7 +84,7 @@ const ToolPanel = ({
         playerShapes={playerShapes}
         selectedPOI={selectedPOI}
         setSelectedPOI={setSelectedPOI}
-        onDeletePOI={(poiId) => setPointsOfInterest((prev) => prev.filter(p => p.id !== poiId))}
+        onDeletePOI={(poiId) => setPointsOfInterest((prev) => prev.filter((p) => p.id !== poiId))}
         onEditPOI={(poi) => {
           setEditingPOI(poi);
           setIsPOIModalOpen(true);
@@ -102,3 +102,4 @@ const ToolPanel = ({
 };
 
 export default ToolPanel;
+

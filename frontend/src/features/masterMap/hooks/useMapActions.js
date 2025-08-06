@@ -6,25 +6,27 @@ import {
   createSessionURL,
 } from '../../../services/MapService';
 import { useSocket } from '../../../shared/context/SocketContext';
+import useMapStore from '../store/useMapStore';
 
-const useMapActions = ({
-  mapId,
-  currentRoom,
-  allShapes,
-  allItems,
-  allPOIs,
-  setCurrentRoom,
-  setShapes,
-  setItems,
-  setPointsOfInterest,
-  setRooms,
-  setSessionId,
-  setPlayers,
-  setIsPOIModalOpen,
-  setEditingPOI,
-  setRoomModalSource,
-  setIsRoomModalOpen,
-}) => {
+const useMapActions = () => {
+  const {
+    mapId,
+    currentRoom,
+    shapes: allShapes,
+    items: allItems,
+    pointsOfInterest: allPOIs,
+    setCurrentRoom,
+    setShapes,
+    setItems,
+    setPointsOfInterest,
+    setRooms,
+    setSessionId,
+    setPlayers,
+    setIsPOIModalOpen,
+    setEditingPOI,
+    setRoomModalSource,
+    setIsRoomModalOpen,
+  } = useMapStore();
   const { socket } = useSocket();
 
   const handleRoomChange = useCallback(
