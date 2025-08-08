@@ -41,7 +41,10 @@ const useMapStore = create(
       currentTurnShapeId: null,
       roomModalSource: null,
       itemInstances: [],
-
+        handleRoomChange: null,
+        handleInvitePlayers: null,
+        setHandleRoomChange: (fn) => set({ handleRoomChange: fn }),
+        setHandleInvitePlayers: (fn) => set({ handleInvitePlayers: fn }),
       // ✅ Сеттеры (основные)
       setMapId: (id) => set({ mapId: id }),
       setMapData: (data) => set({ mapData: data }),
@@ -73,6 +76,9 @@ const useMapStore = create(
       setCurrentTurnShapeId: (v) => set({ currentTurnShapeId: v }),
       setRoomModalSource: (v) => set({ roomModalSource: v }),
 
+        handleAddRoom: null,
+
+        setHandleAddRoom: (fn) => set({ handleAddRoom: fn }),
       // 🧹 Сброс всех состояний редактора
       resetEditor: () =>
         set({
